@@ -15,8 +15,10 @@ go build -o cts.exe .
 ## Uso
 
 ```bash
+cts             # modo interativo: lista, você marca o que remover, confirma (com backup)
 cts scan        # relatório read-only: o que está morto e quanto ocupa
-# cut / purge: em construção (sempre com dry-run + confirmação + backup)
+cts purge       # mostra o que removeria (só os mortos) — dry-run
+cts purge --yes # remove os mortos de verdade, com backup em .cts-backups/
 ```
 
 ## Status
@@ -24,10 +26,12 @@ cts scan        # relatório read-only: o que está morto e quanto ocupa
 MVP em construção, incremento a incremento:
 
 - [x] `scan` de skills
-- [ ] `scan` de agentes (bins + config)
+- [x] `scan` de agentes (bins + config órfã)
+- [x] core de remoção (dry-run + backup) + `purge`
+- [x] lista interativa (selecionar ativos pra remover)
 - [ ] `scan` de plugins/marketplaces
 - [ ] `scan` de MCP servers
-- [ ] `cut` / `purge` com backup
+- [ ] full uninstall de pacote ativo (`npm rm -g` etc.)
 
 ## Desenvolvimento
 
