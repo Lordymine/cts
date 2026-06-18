@@ -1,0 +1,18 @@
+# Binários compilados
+/cts
+/cts.exe
+*.exe
+
+# Backups que o cts gera ao remover
+/.cts-backups/
+
+# Saídas de teste / cobertura
+*.test
+*.out
+coverage.*
+
+# Lixo de SO / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
