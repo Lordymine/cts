@@ -50,7 +50,7 @@ func runInteractive(ctx context.Context) error {
 	}
 
 	backupDir := filepath.Join(home, ".cts-backups", time.Now().Format("20060102-150405"))
-	res, err := remove.New(backupDir, false).Remove(ctx, chosen)
+	res, err := remove.New(backupDir, false, cmdRunner{}).Remove(ctx, chosen)
 	if err != nil {
 		return err
 	}

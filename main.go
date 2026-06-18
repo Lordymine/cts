@@ -86,7 +86,7 @@ func runPurge(ctx context.Context, execute bool) error {
 	}
 
 	backupDir := filepath.Join(home, ".cts-backups", time.Now().Format("20060102-150405"))
-	res, err := remove.New(backupDir, !execute).Remove(ctx, dead)
+	res, err := remove.New(backupDir, !execute, cmdRunner{}).Remove(ctx, dead)
 	if err != nil {
 		return err
 	}
@@ -111,6 +111,16 @@ type pathLister struct{}
 func (pathLister) IsInstalled(bin string) bool {
 	_, err := exec.LookPath(bin)
 	return err == nil
+}
+
+// cmdRunner roda comandos de verdade (npm rm -g, claude mcp remove). Adapter do
+// remove.Runner, na borda — o core de remoção não sabe de exec.
+type cmdRunner struct{}
+
+func (cmdRunner) Run(ctx context.Context, name string, args ...string) error {
+	cmd := exec.CommandContext(ctx, name, args...)
+	cmd.Stdout, cmd.Stderr = os.Stdout, os.Stderr
+	return cmd.Run()
 }
 
 func printReport(targets []target.Target) {
