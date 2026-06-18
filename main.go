@@ -18,16 +18,14 @@ import (
 
 func main() {
 	args := os.Args[1:]
-	if len(args) == 0 {
-		usage()
-		os.Exit(2)
-	}
 
 	var err error
-	switch args[0] {
-	case "scan":
+	switch {
+	case len(args) == 0, args[0] == "clean":
+		err = runInteractive(context.Background())
+	case args[0] == "scan":
 		err = runScan(context.Background())
-	case "purge":
+	case args[0] == "purge":
 		err = runPurge(context.Background(), len(args) > 1 && args[1] == "--yes")
 	default:
 		usage()
@@ -41,7 +39,7 @@ func main() {
 }
 
 func usage() {
-	fmt.Fprintln(os.Stderr, "uso: cts <scan|purge [--yes]>")
+	fmt.Fprintln(os.Stderr, "uso: cts [clean] | cts scan | cts purge [--yes]")
 }
 
 // buildScanners monta os scanners com os caminhos reais. IO e wiring vivem aqui,
