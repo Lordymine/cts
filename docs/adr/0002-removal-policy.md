@@ -15,8 +15,8 @@ Tratar os dois igual seria perigoso (apagar algo que funciona) ou inútil (só l
 
 - **`scan`** mostra tudo: mortos (marcados `✗`) + ativos (inventário).
 - **`purge`** (lote automático) remove **só os mortos** (`Dead == true`). Nunca toca em ativo sozinho.
-- **`cut <nome>` / seleção interativa** remove qualquer item — ativo ou morto — mas é **escolha explícita** do usuário, com confirmação e backup.
-- **Keepers protegidos:** `claude`, `codex`, `pi`, `opencode`, `freebuff` têm guard extra; removê-los exige confirmação reforçada (anti-acidente), mesmo via `cut`.
+- **Ativos só por seleção explícita.** Item ativo (não quebrado) nunca entra no `purge`. Para removê-lo, o usuário **seleciona na lista** (`cut <nome>` ou seleção interativa) — escolha deliberada, item a item, com confirmação.
+- **Sem lista de "protegidos" hardcoded.** O cts não tem como saber quais agentes são "keepers" — isso é conhecimento do usuário, frágil e arbitrário. A proteção do ativo vem de ser **seleção-only**; o **backup** é o undo universal contra acidente.
 - **Dry-run é o default** em qualquer remoção; **backup** em `.cts-backups/` antes de apagar.
 
 ## Por que (os 3 critérios)
@@ -27,6 +27,5 @@ Tratar os dois igual seria perigoso (apagar algo que funciona) ou inútil (só l
 
 ## Consequências
 
-- A camada `internal/remove` recebe um conjunto de **protegidos** e checa antes de apagar.
-- `purge` filtra `Dead == true`. `cut` opera por nome explícito.
-- **Backup e dry-run são responsabilidade da camada de remoção**, não dos scanners — os scanners continuam read-only.
+- A camada `internal/remove` **não tem lista de protegidos**: `purge` filtra `Dead == true`; ativo só sai por nome/seleção explícita.
+- **Backup e dry-run são responsabilidade da camada de remoção**, não dos scanners — os scanners continuam read-only. O backup é o que protege contra remoção acidental de um ativo.
