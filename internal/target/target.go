@@ -17,8 +17,9 @@ const (
 type Target struct {
 	Name      string
 	Category  Category
-	Paths     []string // o que some se remover
+	Paths     []string // arquivos/dirs que somem se remover
 	SizeBytes int64
 	Dead      bool
 	Reason    string
+	Uninstall []string // comando opcional a rodar antes de apagar (ex.: npm rm -g pkg, claude mcp remove)
 }
