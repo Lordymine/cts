@@ -71,6 +71,17 @@ func TestBackupFalhandoNaoApaga(t *testing.T) {
 	}
 }
 
+func TestSemPathsEhPulado(t *testing.T) {
+	tg := target.Target{Name: "mcp-x", Category: target.MCP} // sem Paths (remoção é config-edit)
+	res, err := New(t.TempDir(), false).Remove(context.Background(), []target.Target{tg})
+	if err != nil {
+		t.Fatalf("Remove: %v", err)
+	}
+	if len(res.Removed) != 0 || res.FreedBytes != 0 {
+		t.Errorf("alvo sem Paths não pode ser removido pelo file-remover; veio Removed=%d Freed=%d", len(res.Removed), res.FreedBytes)
+	}
+}
+
 func backupContemArquivo(root, name string) bool {
 	found := false
 	_ = filepath.WalkDir(root, func(_ string, d fs.DirEntry, err error) error {
