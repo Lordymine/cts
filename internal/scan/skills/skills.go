@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"cts/internal/dirsize"
 	"cts/internal/target"
 )
 
@@ -63,22 +64,6 @@ func (s Scanner) inspect(path string, e fs.DirEntry) target.Target {
 		return t
 	}
 
-	t.SizeBytes = dirSize(path)
+	t.SizeBytes = dirsize.Of(path)
 	return t
-}
-
-// dirSize soma o tamanho dos arquivos sob path. Best-effort: erro num caminho
-// isolado não derruba a contagem inteira.
-func dirSize(path string) int64 {
-	var total int64
-	_ = filepath.WalkDir(path, func(_ string, d fs.DirEntry, err error) error {
-		if err != nil || d.IsDir() {
-			return nil
-		}
-		if info, err := d.Info(); err == nil {
-			total += info.Size()
-		}
-		return nil
-	})
-	return total
 }

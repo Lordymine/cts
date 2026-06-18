@@ -4,10 +4,10 @@ package agents
 
 import (
 	"context"
-	"io/fs"
 	"os"
 	"path/filepath"
 
+	"cts/internal/dirsize"
 	"cts/internal/target"
 )
 
@@ -67,7 +67,7 @@ func (s Scanner) inspect(a Agent) (target.Target, bool) {
 		}
 		paths = append(paths, p)
 		if info.IsDir() {
-			size += dirSize(p)
+			size += dirsize.Of(p)
 		} else {
 			size += info.Size()
 		}
@@ -84,21 +84,6 @@ func (s Scanner) inspect(a Agent) (target.Target, bool) {
 		t.Reason = "config órfã (binário não instalado)"
 	}
 	return t, true
-}
-
-// dirSize soma o tamanho dos arquivos sob path. Best-effort.
-func dirSize(path string) int64 {
-	var total int64
-	_ = filepath.WalkDir(path, func(_ string, d fs.DirEntry, err error) error {
-		if err != nil || d.IsDir() {
-			return nil
-		}
-		if info, err := d.Info(); err == nil {
-			total += info.Size()
-		}
-		return nil
-	})
-	return total
 }
 
 // DefaultCatalog lista agentes de terceiros que costumam deixar config órfã.
