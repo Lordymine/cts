@@ -5,9 +5,11 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 
 	"cts/internal/scan"
+	"cts/internal/scan/agents"
 	"cts/internal/scan/skills"
 	"cts/internal/target"
 )
@@ -31,6 +33,7 @@ func runScan(ctx context.Context) error {
 
 	scanners := []scan.Scanner{
 		skills.New(filepath.Join(home, ".claude", "skills")),
+		agents.New(home, pathLister{}, agents.DefaultCatalog()),
 	}
 
 	targets, err := scan.Run(ctx, scanners...)
@@ -39,6 +42,15 @@ func runScan(ctx context.Context) error {
 	}
 	printReport(targets)
 	return nil
+}
+
+// pathLister checa instalação via PATH. É o adapter real do agents.Lister;
+// fica na borda (IO), longe do domínio testável.
+type pathLister struct{}
+
+func (pathLister) IsInstalled(bin string) bool {
+	_, err := exec.LookPath(bin)
+	return err == nil
 }
 
 func printReport(targets []target.Target) {
@@ -52,7 +64,7 @@ func printReport(targets []target.Target) {
 		if t.Dead {
 			mark, dead = "✗ ", dead+1
 		}
-		fmt.Printf("%s%-28s %9s  %s\n", mark, t.Name, humanSize(t.SizeBytes), t.Reason)
+		fmt.Printf("%s%-7s %-28s %9s  %s\n", mark, t.Category, t.Name, humanSize(t.SizeBytes), t.Reason)
 	}
 	fmt.Printf("\n%d alvos, %d mortos.\n", len(targets), dead)
 }
