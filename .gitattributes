@@ -1,0 +1,10 @@
+# Normaliza tudo pra LF no repo (CI roda em Linux; scripts .sh precisam de LF)
+* text=auto eol=lf
+
+*.go    text eol=lf
+*.sh    text eol=lf
+*.md    text eol=lf
+*.yml   text eol=lf
+*.mod   text eol=lf
+
+*.exe   binary
