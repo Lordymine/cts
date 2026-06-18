@@ -38,6 +38,9 @@ func (r Remover) Remove(ctx context.Context, targets []target.Target) (Result, e
 		if err := ctx.Err(); err != nil {
 			return res, err
 		}
+		if len(t.Paths) == 0 {
+			continue // nada em disco pra remover (ex.: MCP é config-edit, não arquivo)
+		}
 		if !r.dryRun {
 			if err := r.removeOne(t); err != nil {
 				return res, fmt.Errorf("remover %s: %w", t.Name, err)
