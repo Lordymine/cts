@@ -12,6 +12,7 @@ import (
 	"cts/internal/remove"
 	"cts/internal/scan"
 	"cts/internal/scan/agents"
+	"cts/internal/scan/mcp"
 	"cts/internal/scan/plugins"
 	"cts/internal/scan/skills"
 	"cts/internal/target"
@@ -50,6 +51,7 @@ func buildScanners(home string) []scan.Scanner {
 		skills.New(filepath.Join(home, ".claude", "skills")),
 		agents.New(home, pathLister{}, agents.DefaultCatalog()),
 		plugins.New(filepath.Join(home, ".claude", "plugins")),
+		mcp.New(filepath.Join(home, ".claude.json"), pathLister{}.IsInstalled),
 	}
 }
 
