@@ -1,51 +1,51 @@
-# Como trabalhar no cts (com segurança)
+# How to work on cts (safely)
 
-Leia antes de rodar comandos ou mexer no código. Esta ferramenta **apaga coisas reais** — a disciplina aqui não é opcional.
+Read this before running commands or touching the code. This tool **deletes real things** — the discipline here is not optional.
 
-## Comandos que PODE usar (dev)
+## Commands you CAN use (dev)
 
-| Comando | O que faz |
+| Command | What it does |
 |---|---|
-| `go run . scan` | Roda o scan (read-only, seguro) |
-| `go test ./...` | Roda os testes |
-| `go test -race ./...` | Testes com detector de corrida |
-| `go vet ./...` | Análise estática do compilador |
+| `go run . scan` | Runs the scan (read-only, safe) |
+| `go test ./...` | Runs the tests |
+| `go test -race ./...` | Tests with the race detector |
+| `go vet ./...` | Compiler static analysis |
 | `golangci-lint run ./...` | Lint |
-| `go build -o cts.exe .` | Compila o binário |
-| `./scripts/check.sh` | Gate completo: fmt + vet + lint + test + build |
-| `gofmt -w .` | Formata |
+| `go build -o cts.exe .` | Builds the binary |
+| `./scripts/check.sh` | Full gate: fmt + vet + lint + test + build |
+| `gofmt -w .` | Formats |
 
-## Comandos que NÃO pode (perigoso)
+## Commands you can NOT (dangerous)
 
-- ❌ **Rodar `cts cut`/`cts purge` destrutivo contra a máquina real durante dev/teste.** Eles removem arquivos do usuário. Em dev, só com dry-run, ou contra um diretório de teste.
-- ❌ **Testar contra caminhos reais** (`~/.claude`, `~/.agents`, `~/.codex`...). Todo teste usa `t.TempDir()`. Um teste que apaga não pode tocar no home de verdade.
-- ❌ **Commitar `cts.exe`** ou qualquer binário (está no `.gitignore`).
-- ❌ **Commitar com o gate vermelho.** Teste/lint/build têm que passar antes.
-- ❌ **`git push --force`, rebase destrutivo, reset --hard** sem motivo claro.
+- ❌ **Running destructive `cts cut`/`cts purge` against the real machine during dev/testing.** They remove the user's files. In dev, only with dry-run, or against a test directory.
+- ❌ **Testing against real paths** (`~/.claude`, `~/.agents`, `~/.codex`...). Every test uses `t.TempDir()`. A test that deletes must not touch the real home.
+- ❌ **Committing `cts.exe`** or any binary (it's in `.gitignore`).
+- ❌ **Committing with a red gate.** Test/lint/build must pass first.
+- ❌ **`git push --force`, destructive rebase, reset --hard** without a clear reason.
 
-## Modelo de segurança da ferramenta
+## The tool's safety model
 
-1. **Dry-run é o padrão.** Sem flag explícita, o cts só mostra — não remove.
-2. **Confirmação** antes de qualquer remoção real.
-3. **Backup** em `.cts-backups/` antes de apagar.
-4. **Confira o alvo** antes de remover. Se o conteúdo contradiz o que foi descrito, pare e avise.
+1. **Dry-run is the default.** Without an explicit flag, cts only shows — it does not remove.
+2. **Confirmation** before any real removal.
+3. **Backup** in `.cts-backups/` before deleting.
+4. **Check the target** before removing. If the content contradicts what was described, stop and warn.
 
-## Workflow (loop XP)
+## Workflow (XP loop)
 
-1. **Plan** — menor fatia que entrega valor. Um scanner/feature por vez.
-2. **Test** — escreve o teste table-driven primeiro (`t.TempDir()`), confirma o comportamento.
-3. **Implement** — código mínimo pra passar.
-4. **Refactor** — limpa com teste verde.
-5. **Gate** — `./scripts/check.sh` verde.
-6. **Commit** — Conventional Commits, sem co-author de agente. Pausa pra revisão.
+1. **Plan** — smallest slice that delivers value. One scanner/feature at a time.
+2. **Test** — write the table-driven test first (`t.TempDir()`), confirm the behavior.
+3. **Implement** — minimal code to pass.
+4. **Refactor** — clean up with the test green.
+5. **Gate** — `./scripts/check.sh` green.
+6. **Commit** — Conventional Commits, no agent co-author. Pause for review.
 
 ## Git
 
-- Branch por feature (`feat/agents-scanner`), nunca direto na `main`.
+- Branch per feature (`feat/agents-scanner`), never directly on `main`.
 - Conventional Commits: `feat:`, `fix:`, `refactor:`, `docs:`, `chore:`, `test:`.
-- Mensagem no que foi feito; corpo só quando o "porquê" não é óbvio.
-- Sem `Co-Authored-By` de agente.
+- Subject describes what was done; body only when the "why" isn't obvious.
+- No agent `Co-Authored-By`.
 
-## Convenções de código
+## Code conventions
 
-Go idiomático — ver `~/.claude/go-conventions.md`. Resumo: sem herança (composição), interface pequena definida no consumidor, erro como valor com `%w`, pacote pequeno por capacidade, sem `util` genérico, arquivo pequeno e coeso.
+Idiomatic Go — see `~/.claude/go-conventions.md`. Summary: no inheritance (composition), small interface defined at the consumer, errors as values with `%w`, small package per capability, no generic `util`, small and cohesive files.

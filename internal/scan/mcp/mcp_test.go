@@ -10,7 +10,7 @@ import (
 	"cts/internal/target"
 )
 
-func TestScanInventariaEFlagaComandoQuebrado(t *testing.T) {
+func TestScanInventoriesAndFlagsBrokenCommand(t *testing.T) {
 	cfgPath := filepath.Join(t.TempDir(), ".claude.json")
 	writeFile(t, cfgPath, `{
 		"mcpServers": {
@@ -22,7 +22,7 @@ func TestScanInventariaEFlagaComandoQuebrado(t *testing.T) {
 		}
 	}`)
 
-	installed := map[string]bool{"npx": true, "node": true} // uvx NÃO instalado
+	installed := map[string]bool{"npx": true, "node": true} // uvx NOT installed
 	got, err := New(cfgPath, func(c string) bool { return installed[c] }).Scan(context.Background())
 	if err != nil {
 		t.Fatalf("Scan: %v", err)
@@ -31,41 +31,41 @@ func TestScanInventariaEFlagaComandoQuebrado(t *testing.T) {
 	byName := make(map[string]target.Target, len(got))
 	for _, tg := range got {
 		if tg.Category != target.MCP {
-			t.Errorf("%s: categoria %q, queria %q", tg.Name, tg.Category, target.MCP)
+			t.Errorf("%s: category %q, want %q", tg.Name, tg.Category, target.MCP)
 		}
 		if len(tg.Paths) != 0 {
-			t.Errorf("%s: MCP não tem Paths (remoção é config-edit), veio %v", tg.Name, tg.Paths)
+			t.Errorf("%s: MCP has no Paths (removal is a command), got %v", tg.Name, tg.Paths)
 		}
 		byName[tg.Name] = tg
 	}
 
 	if len(got) != 3 {
-		t.Fatalf("queria 3 servers (context7, plane, notion), veio %d", len(got))
+		t.Fatalf("want 3 servers (context7, plane, notion), got %d", len(got))
 	}
-	if !strings.Contains(byName["plane"].Reason, "comando não encontrado") {
-		t.Errorf("plane (uvx ausente) deveria marcar comando não encontrado, veio %q", byName["plane"].Reason)
+	if !strings.Contains(byName["plane"].Reason, "command not found") {
+		t.Errorf("plane (uvx missing) should flag command not found, got %q", byName["plane"].Reason)
 	}
-	if strings.Contains(byName["context7"].Reason, "não encontrado") {
-		t.Errorf("context7 (npx ok) não deveria marcar quebrado, veio %q", byName["context7"].Reason)
+	if strings.Contains(byName["context7"].Reason, "not found") {
+		t.Errorf("context7 (npx ok) should not be flagged, got %q", byName["context7"].Reason)
 	}
-	if !strings.Contains(byName["notion"].Reason, "projeto") {
-		t.Errorf("notion deveria indicar escopo de projeto, veio %q", byName["notion"].Reason)
+	if !strings.Contains(byName["notion"].Reason, "project") {
+		t.Errorf("notion should indicate project scope, got %q", byName["notion"].Reason)
 	}
 	if len(byName["context7"].Uninstall) == 0 {
-		t.Error("context7 (user scope) deveria ter comando de remoção (claude mcp remove)")
+		t.Error("context7 (user scope) should have a removal command (claude mcp remove)")
 	}
 	if len(byName["notion"].Uninstall) != 0 {
-		t.Errorf("notion (projeto) não deve ter comando automático, veio %v", byName["notion"].Uninstall)
+		t.Errorf("notion (project) should not have an automatic command, got %v", byName["notion"].Uninstall)
 	}
 }
 
-func TestScanSemConfigNaoEhErro(t *testing.T) {
-	got, err := New(filepath.Join(t.TempDir(), "nao-existe.json"), func(string) bool { return true }).Scan(context.Background())
+func TestScanNoConfigIsNotError(t *testing.T) {
+	got, err := New(filepath.Join(t.TempDir(), "does-not-exist.json"), func(string) bool { return true }).Scan(context.Background())
 	if err != nil {
-		t.Fatalf("config inexistente deveria ser silencioso: %v", err)
+		t.Fatalf("a missing config should be silent: %v", err)
 	}
 	if len(got) != 0 {
-		t.Fatalf("queria 0, veio %d", len(got))
+		t.Fatalf("want 0, got %d", len(got))
 	}
 }
 

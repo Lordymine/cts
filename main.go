@@ -1,4 +1,4 @@
-// Command cts — Cut The Shit. Limpa skills, agentes, plugins e MCP mortos da máquina.
+// Command cts — Cut The Shit. Cleans dead skills, agents, plugins and MCP servers.
 package main
 
 import (
@@ -11,6 +11,7 @@ import (
 
 	"github.com/charmbracelet/huh"
 
+	"cts/internal/configroots"
 	"cts/internal/remove"
 	"cts/internal/scan"
 	"cts/internal/scan/agents"
@@ -47,19 +48,19 @@ func main() {
 	}
 }
 
-// runMenu mostra logo + menu e despacha a ação, em loop até "Sair".
+// runMenu shows the logo + menu and dispatches the chosen action, looping until "Quit".
 func runMenu(ctx context.Context) error {
 	for {
 		fmt.Println(ui.Logo())
 
 		var action string
 		err := huh.NewSelect[string]().
-			Title("O que vamos fazer?").
+			Title("What do you want to do?").
 			Options(
-				huh.NewOption("Escanear — ver o que tem (seguro)", "scan"),
-				huh.NewOption("Limpar — escolher e remover", "clean"),
-				huh.NewOption("Ajuda", "help"),
-				huh.NewOption("Sair", "quit"),
+				huh.NewOption("Scan — see what's there (safe)", "scan"),
+				huh.NewOption("Clean — pick items and remove", "clean"),
+				huh.NewOption("Help", "help"),
+				huh.NewOption("Quit", "quit"),
 			).
 			Value(&action).
 			Run()
@@ -84,17 +85,17 @@ func runMenu(ctx context.Context) error {
 	}
 }
 
-// buildScanners monta os scanners com os caminhos reais. IO e wiring na borda.
+// buildScanners wires the scanners with real paths. IO and wiring live at the edge.
 func buildScanners(home string) []scan.Scanner {
 	return []scan.Scanner{
 		skills.New(filepath.Join(home, ".claude", "skills")),
-		agents.New(home, pathLister{}, agents.DefaultCatalog()),
+		agents.New(configroots.Roots(), pathLister{}, agents.DefaultCatalog()),
 		plugins.New(filepath.Join(home, ".claude", "plugins")),
 		mcp.New(filepath.Join(home, ".claude.json"), pathLister{}.IsInstalled),
 	}
 }
 
-// scanAll roda todos os scanners com os caminhos reais do usuário.
+// scanAll runs every scanner against the user's real paths.
 func scanAll(ctx context.Context) ([]target.Target, error) {
 	home, err := os.UserHomeDir()
 	if err != nil {
@@ -106,22 +107,22 @@ func scanAll(ctx context.Context) ([]target.Target, error) {
 func runScan(ctx context.Context) error {
 	targets, err := scanAll(ctx)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "aviso: %v\n", err)
+		fmt.Fprintf(os.Stderr, "warning: %v\n", err)
 	}
 	fmt.Print(ui.Report(targets))
 	return nil
 }
 
-// runPurge remove SÓ os mortos. Dry-run por padrão; --yes executa (com backup).
+// runPurge removes ONLY dead targets. Dry-run by default; --yes executes (with backup).
 func runPurge(ctx context.Context, execute bool) error {
 	targets, err := scanAll(ctx)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "aviso: %v\n", err)
+		fmt.Fprintf(os.Stderr, "warning: %v\n", err)
 	}
 
 	dead := onlyDead(targets)
 	if len(dead) == 0 {
-		fmt.Println("nada morto pra remover. Máquina limpa.")
+		fmt.Println("nothing dead to remove. Machine is clean.")
 		return nil
 	}
 
@@ -145,7 +146,7 @@ func onlyDead(targets []target.Target) []target.Target {
 	return dead
 }
 
-// pathLister checa instalação via PATH. Adapter real do agents.Lister.
+// pathLister checks installation via PATH. Real adapter of agents.Lister.
 type pathLister struct{}
 
 func (pathLister) IsInstalled(bin string) bool {
@@ -153,8 +154,8 @@ func (pathLister) IsInstalled(bin string) bool {
 	return err == nil
 }
 
-// cmdRunner roda comandos de verdade (npm rm -g, claude mcp remove). Adapter do
-// remove.Runner, na borda — o core de remoção não sabe de exec.
+// cmdRunner runs real commands (npm rm -g, claude mcp remove). Adapter of
+// remove.Runner, at the edge — the removal core knows nothing about exec.
 type cmdRunner struct{}
 
 func (cmdRunner) Run(ctx context.Context, name string, args ...string) error {
@@ -165,16 +166,16 @@ func (cmdRunner) Run(ctx context.Context, name string, args ...string) error {
 
 func printPurge(res remove.Result, backupDir string) {
 	for _, t := range res.Removed {
-		fmt.Printf("✗ %-7s %-28s %9s\n", t.Category, t.Name, ui.HumanSize(t.SizeBytes))
+		fmt.Printf("x %-7s %-28s %9s\n", t.Category, t.Name, ui.HumanSize(t.SizeBytes))
 	}
-	verb := "removeu"
+	verb := "removed"
 	if res.DryRun {
-		verb = "removeria"
+		verb = "would remove"
 	}
-	fmt.Printf("\n%s %d itens, libera %s.\n", verb, len(res.Removed), ui.HumanSize(res.FreedBytes))
+	fmt.Printf("\n%s %d items, frees %s.\n", verb, len(res.Removed), ui.HumanSize(res.FreedBytes))
 	if res.DryRun {
-		fmt.Println("(dry-run — nada foi apagado. Rode 'cts purge --yes' pra executar.)")
+		fmt.Println("(dry-run — nothing was deleted. Run 'cts purge --yes' to execute.)")
 	} else {
-		fmt.Printf("backup em %s\n", backupDir)
+		fmt.Printf("backup at %s\n", backupDir)
 	}
 }

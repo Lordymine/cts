@@ -1,4 +1,4 @@
-// Package skills acha skills instaladas e marca as quebradas/incompletas.
+// Package skills finds installed skills and flags the broken/incomplete ones.
 package skills
 
 import (
@@ -12,28 +12,28 @@ import (
 	"cts/internal/target"
 )
 
-// Scanner varre um diretório de skills (ex.: ~/.claude/skills).
+// Scanner sweeps a skills directory (e.g. ~/.claude/skills).
 type Scanner struct {
 	root string
 }
 
-// New cria um Scanner para o diretório raiz de skills.
+// New creates a Scanner for the skills root directory.
 func New(root string) Scanner {
 	return Scanner{root: root}
 }
 
-// Category satisfaz scan.Scanner.
+// Category satisfies scan.Scanner.
 func (s Scanner) Category() target.Category { return target.Skill }
 
-// Scan lista cada skill no root. Marca como morta a que tem symlink
-// quebrado ou não tem SKILL.md (incompleta).
+// Scan lists each skill under root. It marks as dead any skill with a broken
+// symlink or no SKILL.md (incomplete).
 func (s Scanner) Scan(ctx context.Context) ([]target.Target, error) {
 	entries, err := os.ReadDir(s.root)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return nil, nil // sem dir de skills não é erro — só não há o que limpar
+			return nil, nil // a missing skills dir is not an error — there's just nothing to clean
 		}
-		return nil, fmt.Errorf("ler %s: %w", s.root, err)
+		return nil, fmt.Errorf("read %s: %w", s.root, err)
 	}
 
 	var targets []target.Target
@@ -46,21 +46,21 @@ func (s Scanner) Scan(ctx context.Context) ([]target.Target, error) {
 	return targets, nil
 }
 
-// inspect classifica uma entrada. Esconde a regra de "está morta?" atrás de
-// uma chamada simples — o chamador não precisa saber como ela decide.
+// inspect classifies an entry. It hides the "is it dead?" rule behind a simple
+// call — the caller doesn't need to know how it decides.
 func (s Scanner) inspect(path string, e fs.DirEntry) target.Target {
 	t := target.Target{Name: e.Name(), Category: target.Skill, Paths: []string{path}}
 
-	// Symlink quebrado: Lstat (via DirEntry) vê o link, Stat falha porque o alvo sumiu.
+	// Broken symlink: Lstat (via DirEntry) sees the link, Stat fails because the target is gone.
 	if e.Type()&fs.ModeSymlink != 0 {
 		if _, err := os.Stat(path); err != nil {
-			t.Dead, t.Reason = true, "symlink quebrado"
+			t.Dead, t.Reason = true, "broken symlink"
 			return t
 		}
 	}
 
 	if _, err := os.Stat(filepath.Join(path, "SKILL.md")); err != nil {
-		t.Dead, t.Reason = true, "sem SKILL.md"
+		t.Dead, t.Reason = true, "no SKILL.md"
 		return t
 	}
 

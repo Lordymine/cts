@@ -1,29 +1,29 @@
-# Prior Art — referências e o que aprendemos
+# Prior Art — references and what we learned
 
-Pesquisa antes de construir: não reinventar, não errar. Atualizar quando achar nova referência relevante.
+Research before building: don't reinvent, don't get it wrong. Update this when you find a new relevant reference.
 
-## Conclusão
+## Conclusion
 
-Nenhuma ferramenta faz a limpeza **unificada** (skills + agentes + plugins + MCP, multi-agente, com dry-run + backup) que o `cts` faz. O conceito é nosso. Mas há peças maduras que **validam a arquitetura** e dão conhecimento de localização/UX que seria fácil errar do zero.
+No tool does the **unified** cleanup (skills + agents + plugins + MCP, multi-agent, with dry-run + backup) that `cts` does. The concept is ours. But there are mature pieces that **validate the architecture** and provide location/UX knowledge that would be easy to get wrong from scratch.
 
-## Referências
+## References
 
 ### npkill — `voidcosmos/npkill` (~9.3k★, TypeScript)
-Scan de `node_modules` + lista tamanho + select interativo + delete.
-- **Arquitetura:** `/src` + `/tests`, quase zero dependência, scan low-level rápido.
-- **Segurança:** flag `--dry-run`, multi-select com preview, ⚠️ aviso em alvo crítico. **Deleta permanente, sem backup.**
-- **O que pegamos:** o formato scan→select→delete, a flag `--dry-run`, ⚠️ em alvo arriscado, relatório de espaço liberado.
-- **O que fazemos melhor:** dry-run é o **default** (não flag), e **backup** antes de apagar.
+Scans `node_modules` + lists size + interactive select + delete.
+- **Architecture:** `/src` + `/tests`, almost zero dependencies, fast low-level scan.
+- **Safety:** `--dry-run` flag, multi-select with preview, ⚠️ warning on a critical target. **Deletes permanently, no backup.**
+- **What we take:** the scan→select→delete shape, the `--dry-run` flag, ⚠️ on a risky target, freed-space report.
+- **What we do better:** dry-run is the **default** (not a flag), and **backup** before deleting.
 
 ### mcp-server-manager — `vlazic/mcp-server-manager` (Go)
-Manager single-binary cross-platform de MCP.
-- **Arquitetura:** `cmd/` + `internal/` (+ `web/`) — valida nosso layout Go.
-- **Localização de config (ouro):** por cliente — `~/.claude.json`, `~/.gemini/settings.json`; MCP sob a chave `mcpServers`; formatos diferentes (`type:"http"` no Claude vs `httpUrl` no Gemini).
-- **O que pegamos:** o mapa de caminhos/formatos de config de MCP por cliente, pro nosso scanner de MCP. Não adivinhar.
+Cross-platform single-binary MCP manager.
+- **Architecture:** `cmd/` + `internal/` (+ `web/`) — validates our Go layout.
+- **Config location (gold):** per client — `~/.claude.json`, `~/.gemini/settings.json`; MCP under the `mcpServers` key; different formats (`type:"http"` in Claude vs `httpUrl` in Gemini).
+- **What we take:** the map of MCP config paths/formats per client, for our MCP scanner. Don't guess.
 
-### Outras (contexto)
-- `radu2lupu/mcp-cleanup`, `YuancFeng/claude-code-cleanup`: limpam **processos** órfãos — categoria diferente (não é nosso foco de disco/config).
-- `Guanff/claude-code-cleanup`: skill scan→confirm→remove de artefatos de sessão — confirma o padrão.
+### Others (context)
+- `radu2lupu/mcp-cleanup`, `YuancFeng/claude-code-cleanup`: clean up orphan **processes** — a different category (not our disk/config focus).
+- `Guanff/claude-code-cleanup`: a scan→confirm→remove skill for session artifacts — confirms the pattern.
 
-## Lacunas (sem prior-art direto)
-- **Detecção de agentes instalados** (npm/bun/uv/go bins + config órfã): ninguém cobre. Desenho nosso — lista de instalados **injetada** (testável), flag de config órfã.
+## Gaps (no direct prior art)
+- **Detection of installed agents** (npm/bun/uv/go bins + orphan config): nobody covers it. Our own design — the list of installed items is **injected** (testable), with an orphan-config flag.

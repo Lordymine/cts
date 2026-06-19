@@ -1,26 +1,40 @@
-# Arquitetura — cts
+# Architecture — cts
 
-Documento de engenharia. Leia ao mexer em design, adicionar scanner, ou entender o fluxo.
+Engineering document. Read it when touching design, adding a scanner, or trying to understand the flow.
 
-## Visão
+## Overview
 
-`cts` é uma CLI que **escaneia** categorias de lixo na máquina e (em breve) **remove** com segurança. O fluxo é simples e linear:
+`cts` is a CLI that **scans** categories of junk on the machine and **removes** them safely. The flow is simple and linear:
 
 ```
-main → scan.Run(scanners...) → []target.Target → relatório
-                                              (depois) → cut/purge → backup → remoção
+main → scan.Run(scanners...) → []target.Target → report
+                                              → cut/purge → backup → uninstall/delete
 ```
 
-## Princípio: módulos profundos, domínio no centro
+## Principle: deep modules, domain at the center
 
-- **`internal/target`** — domínio puro. Define `Target` (o que foi achado) e `Category`. Não importa nada de IO. É o centro estável; tudo aponta pra cá.
-- **`internal/scan`** — coordena. Define a interface `Scanner` (a **costura**) e `Run`, que roda todos os scanners e acumula resultado/erro.
-- **`internal/scan/<categoria>`** — um *adapter* por categoria (`skills`, depois `agents`, `plugins`, `mcp`). Cada um sabe varrer o seu canto e decidir o que está morto. Esconde essa lógica atrás de `Scan(ctx)`.
-- **`main`** — monta os scanners com os caminhos reais (`~/.claude/skills`, etc.) e imprime. IO e wiring vivem na borda.
+- **`internal/target`** — pure domain. Defines `Target` (what was found) and `Category`. It imports no IO. It is the stable center; everything points here.
+- **`internal/scan`** — coordinates. Defines the `Scanner` interface (the **seam**) and `Run`, which runs every scanner and accumulates results/errors.
+- **`internal/scan/<category>`** — one *adapter* per category (`skills`, then `agents`, `plugins`, `mcp`). Each one knows how to sweep its corner and decide what is dead. It hides that logic behind `Scan(ctx)`.
+- **`main`** — wires the scanners with the real paths (`~/.claude/skills`, etc.) and prints. IO and wiring live at the edge.
 
-Dependências apontam pra dentro: `skills → target`, `scan → target`, `main → scan, skills, target`. `target` não importa ninguém.
+Dependencies point inward: `skills → target`, `scan → target`, `main → scan, skills, target`. `target` imports nobody.
 
-## A costura: `Scanner`
+## Package layout
+
+- `internal/target` — domain types (`Target`, `Category`).
+- `internal/scan` — `Scanner` seam and `Run`.
+- `internal/scan/<category>` — one adapter per category (`skills`, `agents`, `plugins`, `mcp`).
+- `internal/configroots` — resolves OS-specific config base directories (see Cross-platform).
+- `internal/dirsize` — directory size measurement.
+- `internal/remove` — removal core (dry-run, backup, uninstall).
+- `internal/ui` — presentation: logo, help, and formatted report. Render-only; no scan or removal logic.
+
+## Cross-platform
+
+The `internal/configroots` package resolves the OS-specific base directories where tool configs live. The `agents` scanner now looks for agent config dirs across all of them: the home directory (as `.<name>`), `~/.config/<name>` (Linux/macOS/XDG), Windows `AppData/Roaming` and `AppData/Local`, and macOS `~/Library/Application Support`. This makes agent-config coverage cross-platform; previously it only checked home dotdirs.
+
+## The seam: `Scanner`
 
 ```go
 type Scanner interface {
@@ -29,28 +43,29 @@ type Scanner interface {
 }
 ```
 
-Interface pequena de propósito (um método de trabalho). Em Go, o adapter **não declara** que implementa — basta ter os métodos. Sem herança, sem `implements`: composição e satisfação implícita.
+A deliberately small interface (one work method). In Go, the adapter **does not declare** that it implements it — having the methods is enough. No inheritance, no `implements`: composition and implicit satisfaction.
 
-Por que uma interface aqui e não código direto? Porque há **4 adapters** reais vindo (skills, agents, plugins, mcp). Costura justificada por variação real, não hipotética. (Se fosse 1 só, seria abstração prematura — não criaríamos.)
+Why an interface here and not direct code? Because there are **4 real adapters** coming (skills, agents, plugins, mcp). The seam is justified by real variation, not hypothetical. (If there were only 1, it would be premature abstraction — we wouldn't create it.)
 
-## Como adicionar um scanner novo
+## How to add a new scanner
 
-1. Crie `internal/scan/<categoria>/<categoria>.go` com um `Scanner` struct.
-2. Implemente `Category()` e `Scan(ctx) ([]target.Target, error)`.
-3. Esconda a regra de "está morto?" numa função privada (`inspect`-style) — o chamador não precisa saber como decide.
-4. Escreva o teste **table-driven** primeiro, usando `t.TempDir()` (nunca caminho real).
-5. Registre no `main` (`scan.Run(ctx, ..., novacategoria.New(path))`).
+1. Create `internal/scan/<category>/<category>.go` with a `Scanner` struct.
+2. Implement `Category()` and `Scan(ctx) ([]target.Target, error)`.
+3. Hide the "is it dead?" rule in a private function (`inspect`-style) — the caller doesn't need to know how it decides.
+4. Write the **table-driven** test first, using `t.TempDir()` (never a real path).
+5. Register it in `main` (`scan.Run(ctx, ..., newcategory.New(path))`).
 
-## Erros
+## Errors
 
-Erro é valor. `Scan` devolve `error` embrulhado com contexto (`fmt.Errorf("...: %w", err)`). `scan.Run` **acumula** erros com `errors.Join` e segue — um scanner quebrado não derruba os outros. Diretório inexistente **não é erro** (só não há o que limpar).
+Errors are values. `Scan` returns an `error` wrapped with context (`fmt.Errorf("...: %w", err)`). `scan.Run` **accumulates** errors with `errors.Join` and keeps going — one broken scanner doesn't bring down the others. A nonexistent directory is **not an error** (there is simply nothing to clean).
 
-## Segurança (quando `cut`/`purge` chegarem)
+## Safety
 
-- Dry-run por padrão; remoção só com flag explícita + confirmação.
-- Backup em `.cts-backups/` antes de apagar.
-- A remoção será outro módulo (`internal/remove`) com a mesma disciplina: interface pequena, testável com `t.TempDir()`.
+- Dry-run by default; removal only with an explicit flag + confirmation.
+- Backup in `.cts-backups/` before deleting.
+- Removal lives in `internal/remove` with the same discipline: small surface, testable with `t.TempDir()` and an injected `Runner`. See ADR 0003 for the file-vs-command mechanisms.
 
-## Limitações conhecidas
+## Known limitations
 
-- Tamanho de skill que é **symlink** aparece como `0B` (`filepath.WalkDir` não segue symlink). A resolver: seguir o alvo do link para medir.
+- Agents without a known package manager (go-installed binaries, Python venvs) are removed by config file only; the binary outside the config dirs is not touched.
+- MCP: only user-scope servers get an automatic removal command; project-scope servers are inventory-only.

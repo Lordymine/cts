@@ -1,5 +1,5 @@
-// Package plugins acha marketplaces de plugin órfãos: clones/caches em disco de
-// um marketplace que não tem mais nenhum plugin instalado.
+// Package plugins finds orphan plugin marketplaces: clones/caches on disk for a
+// marketplace that no longer has any installed plugin.
 package plugins
 
 import (
@@ -15,24 +15,24 @@ import (
 	"cts/internal/target"
 )
 
-// subdirs do diretório de plugins onde cada marketplace deixa rastro em disco.
+// subdirs of the plugins directory where each marketplace leaves a trace on disk.
 var subdirs = []string{"marketplaces", "cache"}
 
-// Scanner varre o diretório de plugins (ex.: ~/.claude/plugins).
+// Scanner sweeps the plugins directory (e.g. ~/.claude/plugins).
 type Scanner struct {
 	root string
 }
 
-// New cria um Scanner para o diretório raiz de plugins.
+// New creates a Scanner for the plugins root directory.
 func New(root string) Scanner {
 	return Scanner{root: root}
 }
 
-// Category satisfaz scan.Scanner.
+// Category satisfies scan.Scanner.
 func (s Scanner) Category() target.Category { return target.Plugin }
 
-// Scan cruza os marketplaces em disco com os que têm plugin instalado
-// (lido de installed_plugins.json). Sem plugin instalado = órfão.
+// Scan cross-checks the marketplaces on disk against those with an installed
+// plugin (read from installed_plugins.json). No installed plugin = orphan.
 func (s Scanner) Scan(ctx context.Context) ([]target.Target, error) {
 	active, err := s.activeMarketplaces()
 	if err != nil {
@@ -49,8 +49,8 @@ func (s Scanner) Scan(ctx context.Context) ([]target.Target, error) {
 	return targets, nil
 }
 
-// inspect junta os caminhos em disco (marketplaces/<name>, cache/<name>) de um
-// marketplace e decide se é órfão.
+// inspect joins a marketplace's on-disk paths (marketplaces/<name>, cache/<name>)
+// and decides whether it is orphan.
 func (s Scanner) inspect(name string, active map[string]bool) target.Target {
 	var paths []string
 	var size int64
@@ -65,20 +65,20 @@ func (s Scanner) inspect(name string, active map[string]bool) target.Target {
 	t := target.Target{Name: name, Category: target.Plugin, Paths: paths, SizeBytes: size}
 	if !active[name] {
 		t.Dead = true
-		t.Reason = "marketplace órfão (sem plugin instalado)"
+		t.Reason = "orphan marketplace (no installed plugin)"
 	}
 	return t
 }
 
-// activeMarketplaces lê installed_plugins.json e devolve o conjunto de
-// marketplaces que ainda têm plugin instalado. Chave é "<plugin>@<marketplace>".
+// activeMarketplaces reads installed_plugins.json and returns the set of
+// marketplaces that still have an installed plugin. Keys are "<plugin>@<marketplace>".
 func (s Scanner) activeMarketplaces() (map[string]bool, error) {
 	data, err := os.ReadFile(filepath.Join(s.root, "installed_plugins.json"))
 	if err != nil {
 		if os.IsNotExist(err) {
-			return map[string]bool{}, nil // sem manifest: nada instalado, tudo é órfão
+			return map[string]bool{}, nil // no manifest: nothing installed, everything is orphan
 		}
-		return nil, fmt.Errorf("ler manifest: %w", err)
+		return nil, fmt.Errorf("read manifest: %w", err)
 	}
 
 	var m struct {
@@ -97,8 +97,8 @@ func (s Scanner) activeMarketplaces() (map[string]bool, error) {
 	return active, nil
 }
 
-// marketplaceNames devolve, ordenado, os nomes de marketplace presentes em
-// disco (união de marketplaces/ e cache/).
+// marketplaceNames returns, sorted, the marketplace names present on disk
+// (union of marketplaces/ and cache/).
 func (s Scanner) marketplaceNames() []string {
 	seen := make(map[string]bool)
 	for _, sub := range subdirs {
@@ -116,6 +116,6 @@ func (s Scanner) marketplaceNames() []string {
 	for n := range seen {
 		names = append(names, n)
 	}
-	sort.Strings(names) // determinístico — mapa não tem ordem
+	sort.Strings(names) // deterministic — maps have no order
 	return names
 }

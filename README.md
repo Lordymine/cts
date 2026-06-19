@@ -1,42 +1,42 @@
 # cts — Cut The Shit
 
-CLI em Go que acha e remove **skills, agentes, plugins e MCP mortos** da sua máquina — com dry-run, confirmação e backup. Nasceu de uma faxina manual que virou ferramenta.
+A Go CLI that finds and removes **dead skills, agents, plugins and MCP servers** from your machine — with dry-run, confirmation and backup. It grew out of a manual cleanup that turned into a tool.
 
-## Por quê
+## Why
 
-Ferramentas de IA (Claude Code, codex, opencode, pi, vários agentes) deixam lixo espalhado: skills órfãs, binários de agentes que você não usa mais, caches de plugin, marketplaces órfãos, MCP servers configurados e esquecidos. Isso ocupa disco e — pior — infla o contexto injetado em todo prompt. O `cts` automatiza a limpeza com segurança.
+AI tools (Claude Code, codex, opencode, pi, and various agents) leave junk scattered around: orphan skills, agent binaries you no longer use, plugin caches, orphan marketplaces, MCP servers configured and forgotten. This eats disk space and — worse — bloats the context injected into every prompt. `cts` automates the cleanup safely.
 
-## Instalar
+## Install
 
 ```bash
 go build -o cts.exe .
 ```
 
-## Uso
+## Usage
 
 ```bash
-cts             # modo interativo: lista, você marca o que remover, confirma (com backup)
-cts scan        # relatório read-only: o que está morto e quanto ocupa
-cts purge       # mostra o que removeria (só os mortos) — dry-run
-cts purge --yes # remove os mortos de verdade, com backup em .cts-backups/
+cts             # interactive mode: lists items, you pick what to remove, confirm (with backup)
+cts scan        # read-only report: what is dead and how much space it uses
+cts purge       # shows what it would remove (dead items only) — dry-run
+cts purge --yes # actually removes the dead items, with a backup in .cts-backups/
 ```
 
 ## Status
 
-MVP em construção, incremento a incremento:
+MVP under construction, increment by increment:
 
-- [x] `scan` de skills
-- [x] `scan` de agentes (bins + config órfã)
-- [x] core de remoção (dry-run + backup) + `purge`
-- [x] lista interativa (selecionar ativos pra remover)
-- [x] `scan` de plugins/marketplaces
-- [x] `scan` de MCP servers
-- [x] full uninstall de pacote ativo (`npm rm -g`, `uv tool uninstall`) e MCP (`claude mcp remove`)
+- [x] `scan` for skills
+- [x] `scan` for agents (bins + orphan config)
+- [x] removal core (dry-run + backup) + `purge`
+- [x] interactive list (select active items to remove)
+- [x] `scan` for plugins/marketplaces
+- [x] `scan` for MCP servers
+- [x] full uninstall of an active package (`npm rm -g`, `uv tool uninstall`) and MCP (`claude mcp remove`)
 
-## Desenvolvimento
+## Development
 
-- **Como trabalhar aqui (comandos, segurança, workflow):** [`docs/WORKING.md`](docs/WORKING.md)
-- **Arquitetura e design:** [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
-- **Decisões de design:** [`docs/adr/`](docs/adr/)
+- **How to work here (commands, safety, workflow):** [`docs/WORKING.md`](docs/WORKING.md)
+- **Architecture and design:** [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
+- **Design decisions:** [`docs/adr/`](docs/adr/)
 
-Gate local antes de commitar: `./scripts/check.sh`
+Local gate before committing: `./scripts/check.sh`

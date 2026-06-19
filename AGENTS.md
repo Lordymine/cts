@@ -1,30 +1,30 @@
-# cts — instruções de agente
+# cts — agent instructions
 
-CLI em Go que remove skills/agentes/plugins/MCP mortos da máquina do usuário.
-**Esta ferramenta APAGA coisas do usuário — segurança vem antes de qualquer feature.**
+A Go CLI that removes dead skills/agents/plugins/MCP servers from the user's machine.
+**This tool DELETES the user's stuff — safety comes before any feature.**
 
-## Regra de segurança (inegociável)
+## Safety rule (non-negotiable)
 
-- **Dry-run é o padrão.** Nada é removido sem flag explícita de execução + confirmação do usuário.
-- **Sempre backup antes de remover.** Vai para `.cts-backups/`.
-- **NUNCA** rode `cts cut`/`cts purge` destrutivo contra a máquina real durante dev ou teste.
-- **Testes usam diretório temporário** (`t.TempDir()`), nunca caminhos reais do usuário (`~/.claude`, etc.).
-- Antes de remover algo: confira o alvo. Se o que está lá contradiz o que foi descrito, pare e avise.
+- **Dry-run is the default.** Nothing is removed without an explicit execution flag + user confirmation.
+- **Always back up before removing.** It goes to `.cts-backups/`.
+- **NEVER** run destructive `cts cut`/`cts purge` against the real machine during dev or testing.
+- **Tests use a temp directory** (`t.TempDir()`), never real user paths (`~/.claude`, etc.).
+- Before removing anything: check the target. If what is there contradicts what was described, stop and warn.
 
-## Como trabalhar aqui (puxe sob demanda — não infle o contexto)
+## How to work here (pull on demand — don't bloat the context)
 
-Leia o arquivo só quando o caso bater:
+Read the file only when the case applies:
 
-- **Comandos (o que pode / o que NÃO pode) + workflow seguro** → `docs/WORKING.md`
-- **Arquitetura, design de módulos, como adicionar um scanner** → `docs/ARCHITECTURE.md`
-- **Decisões de design (ADRs)** → `docs/adr/`
-- **Convenções idiomáticas de Go** → `~/.claude/go-conventions.md`
-- **Regras de trabalho do Rafael (valores, loop XP, princípios)** → `~/.agents/AGENTS.md`
+- **Commands (what you can / can NOT do) + safe workflow** → `docs/WORKING.md`
+- **Architecture, module design, how to add a scanner** → `docs/ARCHITECTURE.md`
+- **Design decisions (ADRs)** → `docs/adr/`
+- **Idiomatic Go conventions** → `~/.claude/go-conventions.md`
+- **Rafael's working rules (values, XP loop, principles)** → `~/.agents/AGENTS.md`
 
-## Rápido
+## Quick
 
-- Gate completo (fmt, vet, lint, test, build): `./scripts/check.sh`
-- Rodar: `go run . scan`
-- Testar: `go test ./...`
+- Full gate (fmt, vet, lint, test, build): `./scripts/check.sh`
+- Run: `go run . scan`
+- Test: `go test ./...`
 
-Commit só com o gate verde. Conventional commits. Sem co-author de agente. Feature em branch, nunca direto na main.
+Commit only with a green gate. Conventional commits. No agent co-author. Feature on a branch, never directly on main.
