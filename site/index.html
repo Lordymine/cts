@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>cts · Cut The Shit · clean dead AI tooling from your machine</title>
+<meta name="description" content="A fast, safe CLI that finds and removes dead skills, agents, plugins and MCP servers left behind by AI coding tools, with dry-run, confirmation and backups.">
+<meta property="og:title" content="cts · Cut The Shit">
+<meta property="og:description" content="Reclaim your machine from dead AI tooling. Dry-run, confirmation, backups. Cross-platform single binary.">
+<meta property="og:type" content="website">
+<script>document.documentElement.className += " js";</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0a0b; --panel:#101012; --ink:#ece7e1; --muted:#a3a099;
+    --line:#26262b; --red:#ff453a;
+    --d:"Bricolage Grotesque",-apple-system,BlinkMacSystemFont,sans-serif;
+    --m:"JetBrains Mono",ui-monospace,Consolas,monospace;
+    --z-toast:50;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0; background:var(--bg); color:var(--ink); font-family:var(--d);
+    font-weight:400; line-height:1.6; -webkit-font-smoothing:antialiased; overflow-x:hidden;
+  }
+  body::before{
+    content:""; position:fixed; inset:0; z-index:0; pointer-events:none; opacity:.04;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  }
+  body::after{
+    content:""; position:fixed; inset:0; z-index:0; pointer-events:none;
+    background:radial-gradient(120% 70% at 50% -10%, rgba(255,69,58,.07), transparent 55%);
+  }
+  .wrap{max-width:960px; margin:0 auto; padding:0 28px; position:relative; z-index:1}
+  .mono{font-family:var(--m)}
+  a{color:inherit}
+
+  nav{display:flex; align-items:center; justify-content:space-between; padding:26px 0}
+  .brand{font-family:var(--m); font-weight:700; letter-spacing:.5px; color:var(--red)}
+  .brand b{color:var(--ink)}
+  nav .links{font-family:var(--m); font-size:13px; display:flex; gap:22px}
+  nav .links a{color:var(--muted); text-decoration:none; transition:color .15s}
+  nav .links a:hover{color:var(--ink)}
+
+  header{padding:58px 0 56px}
+  .kicker{font-family:var(--m); font-size:12.5px; letter-spacing:.3em; text-transform:uppercase; color:var(--muted); margin:0 0 24px}
+  .kicker .dot{color:var(--red)}
+  h1{
+    font-family:var(--d); font-weight:800; font-size:clamp(48px,11vw,96px);
+    line-height:.9; letter-spacing:-.035em; margin:0; text-transform:uppercase; text-wrap:balance;
+  }
+  h1 .l2{display:block}
+  h1 .red{color:var(--red); position:relative; display:inline-block}
+  h1 .red::after{
+    content:""; position:absolute; left:-2%; right:-2%; top:52%; height:.085em;
+    background:var(--red); transform:scaleX(0); transform-origin:left;
+  }
+  .js h1 .red::after{animation:cut .7s cubic-bezier(.7,0,.2,1) .9s forwards}
+  .tagline{max-width:60ch; font-size:clamp(17px,2.2vw,20px); color:var(--muted); margin:30px 0 0; text-wrap:pretty}
+  .tagline b{color:var(--ink); font-weight:600}
+
+  .actions{display:flex; flex-wrap:wrap; gap:14px 16px; align-items:center; margin-top:36px}
+  .install{display:flex; align-items:center; gap:14px; background:var(--panel); border:1px solid var(--line); padding:13px 14px 13px 18px; font-family:var(--m); font-size:14.5px}
+  .install .p{color:var(--red)} .install .dimc{color:var(--muted)}
+  .copy{cursor:pointer; background:var(--ink); color:var(--bg); border:0; font-family:var(--m); font-weight:700; font-size:12px; letter-spacing:.05em; padding:8px 12px; text-transform:uppercase; transition:background .15s,color .15s}
+  .copy:hover{background:var(--red); color:var(--ink)}
+  .btn{font-family:var(--m); font-size:13px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; text-decoration:none; padding:14px 22px; border:1px solid var(--line); transition:border-color .15s,background .15s}
+  .btn-primary{background:var(--red); border-color:var(--red); color:#150100}
+  .btn-primary:hover{background:#ff5e54}
+  .btn-ghost{color:var(--ink)}
+  .btn-ghost:hover{border-color:var(--ink)}
+  .nogo{font-family:var(--m); font-size:13px; color:var(--muted); margin:18px 0 0}
+  .nogo a{color:var(--red); text-decoration:none}
+
+  .cut{height:2px; background:var(--red); transform-origin:left}
+  .js .cut{transform:scaleX(0)} .js .cut.in{animation:cut .8s cubic-bezier(.7,0,.2,1) forwards}
+
+  section{padding:62px 0}
+  h2{font-family:var(--d); font-weight:800; font-size:clamp(30px,5vw,46px); line-height:1; letter-spacing:-.025em; margin:0; text-transform:uppercase; text-wrap:balance}
+  .dek{color:var(--muted); font-size:16px; margin:14px 0 0; max-width:62ch; text-wrap:pretty}
+
+  .rows{margin-top:34px; border-top:1px solid var(--line)}
+  .row{display:grid; grid-template-columns:60px 1fr; gap:6px 22px; padding:22px 4px; border-bottom:1px solid var(--line); align-items:baseline; transition:padding .2s,background .2s}
+  .row:hover{background:var(--panel); padding-left:14px}
+  .row .num{font-family:var(--m); font-size:13px; color:var(--red)}
+  .row h3{font-family:var(--d); font-weight:600; font-size:22px; margin:0; text-transform:uppercase; letter-spacing:-.01em}
+  .row p{grid-column:2; margin:6px 0 0; color:var(--muted); font-size:15.5px; max-width:64ch}
+  .row code{font-family:var(--m); font-size:.88em; color:var(--ink)}
+
+  ul.feat{list-style:none; padding:0; margin:34px 0 0; display:grid; gap:1px; background:var(--line); border:1px solid var(--line)}
+  ul.feat li{background:var(--bg); padding:20px 22px; color:var(--muted); font-size:15.5px; max-width:none}
+  ul.feat li b{color:var(--ink); font-family:var(--m); font-weight:700; font-size:12.5px; letter-spacing:.04em; text-transform:uppercase; display:block; margin-bottom:7px}
+  ul.feat li b::before{content:"// "; color:var(--red)}
+  ul.feat li code{font-family:var(--m); font-size:.9em; color:var(--ink)}
+
+  .term{margin-top:34px; border:1px solid var(--line); background:#060607}
+  .term .bar{display:flex; align-items:center; gap:8px; padding:12px 16px; border-bottom:1px solid var(--line); background:var(--panel); font-family:var(--m); font-size:12px; color:var(--muted)}
+  .term .bar i{width:11px; height:11px; border-radius:50%; background:var(--line)}
+  .term .bar span{margin-left:8px}
+  .term pre{margin:0; padding:20px 22px; font-family:var(--m); font-size:13px; line-height:1.7; overflow-x:auto; color:#cfcabf}
+  .c-pr{color:var(--red); font-weight:700} .c-cat{color:var(--ink); font-weight:700; letter-spacing:.06em} .c-x{color:var(--red)} .c-dim{color:var(--muted)}
+
+  footer{border-top:1px solid var(--line); padding:42px 0 64px}
+  .foot-top{display:flex; flex-wrap:wrap; justify-content:space-between; gap:22px; align-items:center}
+  .foot-top .lg{font-family:var(--d); font-weight:800; font-size:32px; text-transform:uppercase; letter-spacing:-.025em}
+  .foot-top .lg .red{color:var(--red)}
+  footer .links{font-family:var(--m); font-size:13px; display:flex; flex-wrap:wrap; gap:20px}
+  footer .links a{color:var(--muted); text-decoration:none}
+  footer .links a:hover{color:var(--red)}
+  footer .legal{font-family:var(--m); font-size:12px; color:var(--muted); margin-top:26px}
+
+  .js .rise{opacity:0; transform:translateY(18px); animation:rise .7s cubic-bezier(.2,.7,.2,1) forwards}
+  .d1{animation-delay:.05s}.d2{animation-delay:.16s}.d3{animation-delay:.3s}.d4{animation-delay:.44s}.d5{animation-delay:.56s}
+  @keyframes rise{to{opacity:1; transform:none}}
+  @keyframes cut{to{transform:scaleX(1)}}
+  .js .reveal{opacity:0; transform:translateY(22px); transition:opacity .7s cubic-bezier(.2,.7,.2,1),transform .7s cubic-bezier(.2,.7,.2,1)}
+  .js .reveal.in{opacity:1; transform:none}
+  @media(prefers-reduced-motion:reduce){
+    .rise,.reveal{opacity:1!important; transform:none!important; animation:none!important; transition:none!important}
+    .cut{transform:none!important; animation:none!important} h1 .red::after{animation:none!important; transform:scaleX(1)!important}
+  }
+
+  .toast{position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(16px); background:var(--red); color:var(--ink); font-family:var(--m); font-weight:700; font-size:13px; padding:11px 20px; opacity:0; transition:.25s; z-index:var(--z-toast); letter-spacing:.04em; text-transform:uppercase}
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
+  @media(max-width:600px){.row{grid-template-columns:1fr}.row .num,.row p{grid-column:1}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav class="rise d1">
+    <div class="brand mono">cts<b>/</b></div>
+    <div class="links">
+      <a href="#clean">what</a>
+      <a href="#why">why</a>
+      <a href="https://github.com/Lordymine/cts">github ↗</a>
+    </div>
+  </nav>
+
+  <header>
+    <p class="kicker rise d1">✂ Dev tool <span class="dot">·</span> single binary <span class="dot">·</span> v0.0.2</p>
+    <h1>
+      <span class="l2 rise d2">Cut the</span>
+      <span class="l2 rise d3"><span class="red">shit</span>.</span>
+    </h1>
+    <p class="tagline rise d4">Reclaim your machine from dead AI tooling. <b>cts</b> finds and removes orphaned skills, agents, plugins and MCP servers, with dry-run, confirmation and backups.</p>
+
+    <div class="actions rise d5">
+      <div class="install">
+        <span class="mono"><span class="p">go</span> install github.com/Lordymine/cts<span class="dimc">@latest</span></span>
+        <button class="copy" onclick="copyCmd()">Copy</button>
+      </div>
+      <a class="btn btn-primary" href="https://github.com/Lordymine/cts">Star on GitHub</a>
+      <a class="btn btn-ghost" href="https://github.com/Lordymine/cts/releases/latest">Download binary</a>
+    </div>
+    <p class="nogo rise d5">No Go? Grab a prebuilt binary for your OS in the <a href="https://github.com/Lordymine/cts/releases/latest">latest release</a>.</p>
+  </header>
+</div>
+
+<div class="cut"></div>
+
+<div class="wrap">
+  <section id="clean" class="reveal">
+    <h2>Four kinds of dead weight</h2>
+    <p class="dek">cts knows the shapes junk takes when AI tools come and go.</p>
+    <div class="rows">
+      <div class="row"><span class="num">01</span><h3>Skills</h3><p>Broken symlinks and skills missing their <code>SKILL.md</code>.</p></div>
+      <div class="row"><span class="num">02</span><h3>Agents</h3><p>Orphan config: a config directory whose binary isn't installed, found across every OS config root.</p></div>
+      <div class="row"><span class="num">03</span><h3>Plugins</h3><p>Orphan marketplaces, the clones and caches left behind with no installed plugin.</p></div>
+      <div class="row"><span class="num">04</span><h3>MCP servers</h3><p>An inventory of configured servers, flagging stdio servers whose command is gone.</p></div>
+    </div>
+  </section>
+</div>
+
+<div class="cut"></div>
+
+<div class="wrap">
+  <section id="why" class="reveal">
+    <h2>Blunt tool, careful hands</h2>
+    <p class="dek">It removes a lot, and it earns your trust at every step.</p>
+    <ul class="feat">
+      <li><b>Safe by default</b>Dry-run first, a confirmation before anything is removed, and a backup of everything it deletes. A failed backup aborts the delete.</li>
+      <li><b>Two ways to clean</b>Purge the obviously-dead in one shot, or pick exactly what to remove from an interactive list.</li>
+      <li><b>Proper uninstall</b>Packages go through their real manager (<code>npm</code>, <code>bun</code>, <code>uv</code>) and MCP servers through <code>claude mcp remove</code>, so configs stay intact.</li>
+      <li><b>Truly cross-platform</b>Scans config across the home directory, <code>~/.config</code>, Windows <code>AppData</code> and macOS <code>~/Library</code>.</li>
+      <li><b>Single binary</b>Written in Go. One file, nothing else to install.</li>
+    </ul>
+  </section>
+</div>
+
+<div class="cut"></div>
+
+<div class="wrap">
+  <section class="reveal">
+    <h2>One command, one report</h2>
+    <p class="dek">Run <code class="mono" style="color:var(--ink)">cts scan</code> and read the whole picture, grouped and graded.</p>
+    <div class="term">
+      <div class="bar"><i></i><i></i><i></i><span>cts scan</span></div>
+<pre><span class="c-pr">$</span> cts scan
+
+<span class="c-cat">SKILL</span>
+    nestjs-best-practices          4.5KB
+  <span class="c-x">x improve-codebase              0B        broken symlink</span>
+
+<span class="c-cat">AGENT</span>
+  <span class="c-x">x codebuddy                     0B        orphan config (binary not installed)</span>
+
+<span class="c-cat">PLUGIN</span>
+    claude-plugins-official       21.2MB
+
+<span class="c-cat">MCP</span>
+    context7                       0B        user
+
+<span class="c-dim">36 targets · 2 dead</span></pre>
+    </div>
+  </section>
+</div>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-top">
+      <div class="lg">Cut the <span class="red">shit</span>.</div>
+      <div class="links">
+        <a href="https://github.com/Lordymine/cts">GitHub</a>
+        <a href="https://github.com/Lordymine/cts/releases">Releases</a>
+        <a href="https://github.com/Lordymine/cts/blob/main/LICENSE">MIT</a>
+        <a href="https://github.com/Lordymine/cts/blob/main/docs/ARCHITECTURE.md">Architecture</a>
+      </div>
+    </div>
+    <p class="legal">Built in Go. Safe by default. Your machine, your call.</p>
+  </div>
+</footer>
+
+<div class="toast" id="toast">Copied to clipboard</div>
+<script>
+  function copyCmd(){
+    navigator.clipboard.writeText("go install github.com/Lordymine/cts@latest").then(function(){
+      var t=document.getElementById("toast"); t.classList.add("show");
+      setTimeout(function(){t.classList.remove("show")},1500);
+    });
+  }
+  var io=new IntersectionObserver(function(es){
+    es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add("in"); io.unobserve(e.target);} });
+  },{threshold:.15});
+  document.querySelectorAll(".reveal,.cut").forEach(function(el){io.observe(el)});
+</script>
+</body>
+</html>
