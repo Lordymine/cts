@@ -51,6 +51,12 @@ func TestScanInventariaEFlagaComandoQuebrado(t *testing.T) {
 	if !strings.Contains(byName["notion"].Reason, "projeto") {
 		t.Errorf("notion deveria indicar escopo de projeto, veio %q", byName["notion"].Reason)
 	}
+	if len(byName["context7"].Uninstall) == 0 {
+		t.Error("context7 (user scope) deveria ter comando de remoção (claude mcp remove)")
+	}
+	if len(byName["notion"].Uninstall) != 0 {
+		t.Errorf("notion (projeto) não deve ter comando automático, veio %v", byName["notion"].Uninstall)
+	}
 }
 
 func TestScanSemConfigNaoEhErro(t *testing.T) {

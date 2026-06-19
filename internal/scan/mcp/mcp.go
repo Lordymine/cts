@@ -63,24 +63,30 @@ func (s Scanner) Scan(ctx context.Context) ([]target.Target, error) {
 		if err := ctx.Err(); err != nil {
 			return targets, err
 		}
-		targets = append(targets, s.inspect(name, cfg.McpServers[name], "user"))
+		targets = append(targets, s.inspect(name, cfg.McpServers[name], "user", true))
 	}
 	for _, proj := range sortedKeys(cfg.Projects) {
 		servers := cfg.Projects[proj].McpServers
 		for _, name := range sortedKeys(servers) {
-			targets = append(targets, s.inspect(name, servers[name], "projeto: "+filepath.Base(proj)))
+			targets = append(targets, s.inspect(name, servers[name], "projeto: "+filepath.Base(proj), false))
 		}
 	}
 	return targets, nil
 }
 
-// inspect monta o Target de um MCP. Paths fica vazio de propósito.
-func (s Scanner) inspect(name string, srv server, scope string) target.Target {
+// inspect monta o Target de um MCP. Paths fica vazio de propósito; remoção é via
+// comando. Só o escopo user ganha comando automático (`claude mcp remove -s user`);
+// servers de projeto ficam como inventário (o usuário remove dentro do projeto).
+func (s Scanner) inspect(name string, srv server, scope string, userScope bool) target.Target {
 	reason := scope
 	if bin := firstWord(srv.Command); bin != "" && !s.hasCommand(bin) {
 		reason = scope + " — comando não encontrado: " + bin
 	}
-	return target.Target{Name: name, Category: target.MCP, Reason: reason}
+	t := target.Target{Name: name, Category: target.MCP, Reason: reason}
+	if userScope {
+		t.Uninstall = []string{"claude", "mcp", "remove", name, "-s", "user"}
+	}
+	return t
 }
 
 func firstWord(cmd string) string {

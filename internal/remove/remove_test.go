@@ -5,10 +5,19 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"cts/internal/target"
 )
+
+// recordingRunner registra os comandos sem executá-los.
+type recordingRunner struct{ calls [][]string }
+
+func (r *recordingRunner) Run(_ context.Context, name string, args ...string) error {
+	r.calls = append(r.calls, append([]string{name}, args...))
+	return nil
+}
 
 func TestDryRunNaoApaga(t *testing.T) {
 	dir := t.TempDir()
@@ -16,7 +25,7 @@ func TestDryRunNaoApaga(t *testing.T) {
 	writeFile(t, filepath.Join(skill, "SKILL.md"), "x")
 
 	tg := target.Target{Name: "skill", Category: target.Skill, Paths: []string{skill}, SizeBytes: 1}
-	res, err := New(filepath.Join(dir, "backup"), true).Remove(context.Background(), []target.Target{tg})
+	res, err := New(filepath.Join(dir, "backup"), true, &recordingRunner{}).Remove(context.Background(), []target.Target{tg})
 	if err != nil {
 		t.Fatalf("Remove: %v", err)
 	}
@@ -39,7 +48,7 @@ func TestExecutaApagaEFazBackup(t *testing.T) {
 	backup := filepath.Join(dir, "backup")
 
 	tg := target.Target{Name: "skill", Category: target.Skill, Paths: []string{skill}}
-	_, err := New(backup, false).Remove(context.Background(), []target.Target{tg})
+	_, err := New(backup, false, &recordingRunner{}).Remove(context.Background(), []target.Target{tg})
 	if err != nil {
 		t.Fatalf("Remove: %v", err)
 	}
@@ -57,12 +66,11 @@ func TestBackupFalhandoNaoApaga(t *testing.T) {
 	skill := filepath.Join(dir, "skill")
 	writeFile(t, filepath.Join(skill, "SKILL.md"), "x")
 
-	// backupDir aponta para um ARQUIVO existente → MkdirAll do backup falha → não pode apagar
 	badBackup := filepath.Join(dir, "arquivo")
-	writeFile(t, badBackup, "ocupa o nome")
+	writeFile(t, badBackup, "ocupa o nome") // backupDir é um arquivo → MkdirAll falha
 
 	tg := target.Target{Name: "skill", Category: target.Skill, Paths: []string{skill}}
-	_, err := New(badBackup, false).Remove(context.Background(), []target.Target{tg})
+	_, err := New(badBackup, false, &recordingRunner{}).Remove(context.Background(), []target.Target{tg})
 	if err == nil {
 		t.Fatal("backup falho deveria devolver erro")
 	}
@@ -71,14 +79,57 @@ func TestBackupFalhandoNaoApaga(t *testing.T) {
 	}
 }
 
-func TestSemPathsEhPulado(t *testing.T) {
-	tg := target.Target{Name: "mcp-x", Category: target.MCP} // sem Paths (remoção é config-edit)
-	res, err := New(t.TempDir(), false).Remove(context.Background(), []target.Target{tg})
+func TestSemPathsNemUninstallEhPulado(t *testing.T) {
+	tg := target.Target{Name: "vazio", Category: target.MCP} // nada a fazer
+	res, err := New(t.TempDir(), false, &recordingRunner{}).Remove(context.Background(), []target.Target{tg})
 	if err != nil {
 		t.Fatalf("Remove: %v", err)
 	}
-	if len(res.Removed) != 0 || res.FreedBytes != 0 {
-		t.Errorf("alvo sem Paths não pode ser removido pelo file-remover; veio Removed=%d Freed=%d", len(res.Removed), res.FreedBytes)
+	if len(res.Removed) != 0 {
+		t.Errorf("alvo sem Paths nem Uninstall deveria ser pulado, veio Removed=%d", len(res.Removed))
+	}
+}
+
+func TestUninstallRodaComandoEntaoApaga(t *testing.T) {
+	dir := t.TempDir()
+	cfg := filepath.Join(dir, "cfg")
+	writeFile(t, filepath.Join(cfg, "f"), "x")
+	rr := &recordingRunner{}
+
+	tg := target.Target{
+		Name:      "qwen",
+		Category:  target.Agent,
+		Paths:     []string{cfg},
+		Uninstall: []string{"npm", "rm", "-g", "@qwen-code/qwen-code"},
+	}
+	_, err := New(filepath.Join(dir, "backup"), false, rr).Remove(context.Background(), []target.Target{tg})
+	if err != nil {
+		t.Fatalf("Remove: %v", err)
+	}
+
+	if len(rr.calls) != 1 {
+		t.Fatalf("queria 1 comando rodado, veio %d", len(rr.calls))
+	}
+	if got, want := strings.Join(rr.calls[0], " "), "npm rm -g @qwen-code/qwen-code"; got != want {
+		t.Errorf("comando = %q, queria %q", got, want)
+	}
+	if _, err := os.Stat(cfg); !os.IsNotExist(err) {
+		t.Error("config deveria ter sido apagada após o uninstall")
+	}
+}
+
+func TestDryRunNaoRodaComando(t *testing.T) {
+	rr := &recordingRunner{}
+	tg := target.Target{Name: "x", Category: target.Agent, Uninstall: []string{"npm", "rm", "-g", "x"}}
+	res, err := New(t.TempDir(), true, rr).Remove(context.Background(), []target.Target{tg})
+	if err != nil {
+		t.Fatalf("Remove: %v", err)
+	}
+	if len(rr.calls) != 0 {
+		t.Error("dry-run não pode rodar comando")
+	}
+	if len(res.Removed) != 1 {
+		t.Error("dry-run deveria listar o alvo como 'removeria'")
 	}
 }
 

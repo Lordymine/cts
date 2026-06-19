@@ -13,6 +13,7 @@ import (
 	"cts/internal/remove"
 	"cts/internal/scan"
 	"cts/internal/target"
+	"cts/internal/ui"
 )
 
 // runInteractive: scan → lista interativa (mortos pré-marcados) → confirma → remove com backup.
@@ -50,7 +51,7 @@ func runInteractive(ctx context.Context) error {
 	}
 
 	backupDir := filepath.Join(home, ".cts-backups", time.Now().Format("20060102-150405"))
-	res, err := remove.New(backupDir, false).Remove(ctx, chosen)
+	res, err := remove.New(backupDir, false, cmdRunner{}).Remove(ctx, chosen)
 	if err != nil {
 		return err
 	}
@@ -90,7 +91,7 @@ func confirmRemove(chosen []target.Target) (bool, error) {
 	}
 	var ok bool
 	err := huh.NewConfirm().
-		Title(fmt.Sprintf("Remover %d itens (libera %s)? Backup será feito antes.", len(chosen), humanSize(freed))).
+		Title(fmt.Sprintf("Remover %d itens (libera %s)? Backup será feito antes.", len(chosen), ui.HumanSize(freed))).
 		Affirmative("Remover").
 		Negative("Cancelar").
 		Value(&ok).
@@ -107,7 +108,7 @@ func label(t target.Target) string {
 	if t.Reason != "" {
 		reason = "— " + t.Reason
 	}
-	return fmt.Sprintf("%s %-7s %-28s %9s %s", mark, t.Category, t.Name, humanSize(t.SizeBytes), reason)
+	return fmt.Sprintf("%s %-7s %-28s %9s %s", mark, t.Category, t.Name, ui.HumanSize(t.SizeBytes), reason)
 }
 
 // ignoreAbort transforma Ctrl+C / Esc do huh em saída limpa, não em erro.

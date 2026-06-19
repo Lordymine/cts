@@ -29,9 +29,9 @@ MVP em construção, incremento a incremento:
 - [x] `scan` de agentes (bins + config órfã)
 - [x] core de remoção (dry-run + backup) + `purge`
 - [x] lista interativa (selecionar ativos pra remover)
-- [ ] `scan` de plugins/marketplaces
-- [ ] `scan` de MCP servers
-- [ ] full uninstall de pacote ativo (`npm rm -g` etc.)
+- [x] `scan` de plugins/marketplaces
+- [x] `scan` de MCP servers
+- [x] full uninstall de pacote ativo (`npm rm -g`, `uv tool uninstall`) e MCP (`claude mcp remove`)
 
 ## Desenvolvimento
 
