@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/charmbracelet/huh"
+
 	"cts/internal/remove"
 	"cts/internal/scan"
 	"cts/internal/scan/agents"
@@ -16,6 +18,7 @@ import (
 	"cts/internal/scan/plugins"
 	"cts/internal/scan/skills"
 	"cts/internal/target"
+	"cts/internal/ui"
 )
 
 func main() {
@@ -23,14 +26,18 @@ func main() {
 
 	var err error
 	switch {
-	case len(args) == 0, args[0] == "clean":
+	case len(args) == 0:
+		err = runMenu(context.Background())
+	case args[0] == "clean":
 		err = runInteractive(context.Background())
 	case args[0] == "scan":
 		err = runScan(context.Background())
 	case args[0] == "purge":
 		err = runPurge(context.Background(), len(args) > 1 && args[1] == "--yes")
+	case args[0] == "help", args[0] == "-h", args[0] == "--help":
+		fmt.Println(ui.Help())
 	default:
-		usage()
+		fmt.Println(ui.Help())
 		os.Exit(2)
 	}
 
@@ -40,12 +47,44 @@ func main() {
 	}
 }
 
-func usage() {
-	fmt.Fprintln(os.Stderr, "uso: cts [clean] | cts scan | cts purge [--yes]")
+// runMenu mostra logo + menu e despacha a ação, em loop até "Sair".
+func runMenu(ctx context.Context) error {
+	for {
+		fmt.Println(ui.Logo())
+
+		var action string
+		err := huh.NewSelect[string]().
+			Title("O que vamos fazer?").
+			Options(
+				huh.NewOption("Escanear — ver o que tem (seguro)", "scan"),
+				huh.NewOption("Limpar — escolher e remover", "clean"),
+				huh.NewOption("Ajuda", "help"),
+				huh.NewOption("Sair", "quit"),
+			).
+			Value(&action).
+			Run()
+		if err != nil {
+			return ignoreAbort(err)
+		}
+
+		switch action {
+		case "scan":
+			if err := runScan(ctx); err != nil {
+				return err
+			}
+		case "clean":
+			if err := runInteractive(ctx); err != nil {
+				return err
+			}
+		case "help":
+			fmt.Println(ui.Help())
+		case "quit":
+			return nil
+		}
+	}
 }
 
-// buildScanners monta os scanners com os caminhos reais. IO e wiring vivem aqui,
-// na borda — os scanners em si são testáveis isolados.
+// buildScanners monta os scanners com os caminhos reais. IO e wiring na borda.
 func buildScanners(home string) []scan.Scanner {
 	return []scan.Scanner{
 		skills.New(filepath.Join(home, ".claude", "skills")),
@@ -55,26 +94,27 @@ func buildScanners(home string) []scan.Scanner {
 	}
 }
 
-func runScan(ctx context.Context) error {
+// scanAll roda todos os scanners com os caminhos reais do usuário.
+func scanAll(ctx context.Context) ([]target.Target, error) {
 	home, err := os.UserHomeDir()
 	if err != nil {
-		return fmt.Errorf("home dir: %w", err)
+		return nil, fmt.Errorf("home dir: %w", err)
 	}
-	targets, err := scan.Run(ctx, buildScanners(home)...)
+	return scan.Run(ctx, buildScanners(home)...)
+}
+
+func runScan(ctx context.Context) error {
+	targets, err := scanAll(ctx)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "aviso: %v\n", err)
 	}
-	printReport(targets)
+	fmt.Print(ui.Report(targets))
 	return nil
 }
 
 // runPurge remove SÓ os mortos. Dry-run por padrão; --yes executa (com backup).
 func runPurge(ctx context.Context, execute bool) error {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return fmt.Errorf("home dir: %w", err)
-	}
-	targets, err := scan.Run(ctx, buildScanners(home)...)
+	targets, err := scanAll(ctx)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "aviso: %v\n", err)
 	}
@@ -85,6 +125,7 @@ func runPurge(ctx context.Context, execute bool) error {
 		return nil
 	}
 
+	home, _ := os.UserHomeDir()
 	backupDir := filepath.Join(home, ".cts-backups", time.Now().Format("20060102-150405"))
 	res, err := remove.New(backupDir, !execute, cmdRunner{}).Remove(ctx, dead)
 	if err != nil {
@@ -104,8 +145,7 @@ func onlyDead(targets []target.Target) []target.Target {
 	return dead
 }
 
-// pathLister checa instalação via PATH. É o adapter real do agents.Lister;
-// fica na borda (IO), longe do domínio testável.
+// pathLister checa instalação via PATH. Adapter real do agents.Lister.
 type pathLister struct{}
 
 func (pathLister) IsInstalled(bin string) bool {
@@ -123,47 +163,18 @@ func (cmdRunner) Run(ctx context.Context, name string, args ...string) error {
 	return cmd.Run()
 }
 
-func printReport(targets []target.Target) {
-	if len(targets) == 0 {
-		fmt.Println("nada encontrado.")
-		return
-	}
-	var dead int
-	for _, t := range targets {
-		mark := "  "
-		if t.Dead {
-			mark, dead = "✗ ", dead+1
-		}
-		fmt.Printf("%s%-7s %-28s %9s  %s\n", mark, t.Category, t.Name, humanSize(t.SizeBytes), t.Reason)
-	}
-	fmt.Printf("\n%d alvos, %d mortos.\n", len(targets), dead)
-}
-
 func printPurge(res remove.Result, backupDir string) {
 	for _, t := range res.Removed {
-		fmt.Printf("✗ %-7s %-28s %9s\n", t.Category, t.Name, humanSize(t.SizeBytes))
+		fmt.Printf("✗ %-7s %-28s %9s\n", t.Category, t.Name, ui.HumanSize(t.SizeBytes))
 	}
 	verb := "removeu"
 	if res.DryRun {
 		verb = "removeria"
 	}
-	fmt.Printf("\n%s %d itens, libera %s.\n", verb, len(res.Removed), humanSize(res.FreedBytes))
+	fmt.Printf("\n%s %d itens, libera %s.\n", verb, len(res.Removed), ui.HumanSize(res.FreedBytes))
 	if res.DryRun {
 		fmt.Println("(dry-run — nada foi apagado. Rode 'cts purge --yes' pra executar.)")
 	} else {
 		fmt.Printf("backup em %s\n", backupDir)
 	}
-}
-
-func humanSize(b int64) string {
-	const unit = 1024
-	if b < unit {
-		return fmt.Sprintf("%dB", b)
-	}
-	div, exp := int64(unit), 0
-	for n := b / unit; n >= unit; n /= unit {
-		div *= unit
-		exp++
-	}
-	return fmt.Sprintf("%.1f%cB", float64(b)/float64(div), "KMGTPE"[exp])
 }
