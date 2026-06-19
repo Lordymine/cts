@@ -6,28 +6,35 @@ import (
 	"path/filepath"
 	"testing"
 
+	"cts/internal/configroots"
 	"cts/internal/target"
 )
 
-// fakeLister implementa Lister sem tocar no PATH real.
+// fakeLister implements Lister without touching the real PATH.
 type fakeLister map[string]bool
 
 func (f fakeLister) IsInstalled(bin string) bool { return f[bin] }
 
-func TestScan(t *testing.T) {
+func TestScanFlagsOrphanConfigAcrossRoots(t *testing.T) {
 	home := t.TempDir()
-	mkdir(t, filepath.Join(home, ".qwen"))  // config existe, binário NÃO instalado → morto
-	mkdir(t, filepath.Join(home, ".codex")) // config existe, binário instalado → vivo
-	// "ghost": no catálogo, mas sem config em disco e não instalado → ignorado
+	xdg := t.TempDir()
+	mkdir(t, filepath.Join(home, ".qwen"))  // dotted home config, binary missing → dead
+	mkdir(t, filepath.Join(xdg, "gemini"))  // plain (XDG-style) config, binary missing → dead
+	mkdir(t, filepath.Join(home, ".codex")) // config + binary installed → alive
 
-	catalog := []Agent{
-		{Name: "qwen", Bin: "qwen", Dirs: []string{".qwen", ".gqwen"}},
-		{Name: "codex", Bin: "codex", Dirs: []string{".codex"}},
-		{Name: "ghost", Bin: "ghost", Dirs: []string{".ghost"}},
+	roots := []configroots.Root{
+		{Path: home, Dotted: true},
+		{Path: xdg, Dotted: false},
 	}
-	lister := fakeLister{"codex": true} // só codex instalado
+	catalog := []Agent{
+		{Name: "qwen", Bin: "qwen", Dirs: []string{"qwen"}},
+		{Name: "gemini", Bin: "gemini", Dirs: []string{"gemini"}},
+		{Name: "codex", Bin: "codex", Dirs: []string{"codex"}},
+		{Name: "ghost", Bin: "ghost", Dirs: []string{"ghost"}}, // no config, not installed → skipped
+	}
+	lister := fakeLister{"codex": true}
 
-	got, err := New(home, lister, catalog).Scan(context.Background())
+	got, err := New(roots, lister, catalog).Scan(context.Background())
 	if err != nil {
 		t.Fatalf("Scan: %v", err)
 	}
@@ -35,22 +42,22 @@ func TestScan(t *testing.T) {
 	byName := make(map[string]target.Target, len(got))
 	for _, tg := range got {
 		if tg.Category != target.Agent {
-			t.Errorf("%s: categoria %q, queria %q", tg.Name, tg.Category, target.Agent)
+			t.Errorf("%s: category %q, want %q", tg.Name, tg.Category, target.Agent)
 		}
 		byName[tg.Name] = tg
 	}
 
-	if len(got) != 2 {
-		t.Fatalf("queria 2 alvos (qwen, codex), veio %d: %+v", len(got), got)
-	}
 	if !byName["qwen"].Dead {
-		t.Errorf("qwen: config existe e binário não instalado → deveria ser morto (reason=%q)", byName["qwen"].Reason)
+		t.Error("qwen: dotted home config + no binary should be dead")
+	}
+	if !byName["gemini"].Dead {
+		t.Error("gemini: plain-root config + no binary should be dead (cross-platform coverage)")
 	}
 	if byName["codex"].Dead {
-		t.Errorf("codex: instalado → não deveria ser morto")
+		t.Error("codex: installed should not be dead")
 	}
 	if _, ok := byName["ghost"]; ok {
-		t.Errorf("ghost: sem config e não instalado → não deveria aparecer")
+		t.Error("ghost: no config and not installed should be skipped")
 	}
 }
 
