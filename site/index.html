@@ -8,6 +8,7 @@
 <meta property="og:title" content="cts · Cut The Shit">
 <meta property="og:description" content="Reclaim your machine from dead AI tooling. Dry-run, confirmation, backups. Cross-platform single binary.">
 <meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230a0a0b'/%3E%3Ctext x='16' y='24' font-family='monospace' font-size='22' font-weight='bold' fill='%23ff453a' text-anchor='middle'%3Ec%3C/text%3E%3C/svg%3E">
 <script>document.documentElement.className += " js";</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -63,7 +64,7 @@
   .tagline b{color:var(--ink); font-weight:600}
 
   .actions{display:flex; flex-wrap:wrap; gap:14px 16px; align-items:center; margin-top:36px}
-  .install{display:flex; align-items:center; gap:14px; background:var(--panel); border:1px solid var(--line); padding:13px 14px 13px 18px; font-family:var(--m); font-size:14.5px}
+  .install{display:flex; align-items:center; gap:14px; min-width:0; max-width:100%; background:var(--panel); border:1px solid var(--line); padding:13px 14px 13px 18px; font-family:var(--m); font-size:14.5px}
   .install .p{color:var(--red)} .install .dimc{color:var(--muted)}
   .copy{cursor:pointer; background:var(--ink); color:var(--bg); border:0; font-family:var(--m); font-weight:700; font-size:12px; letter-spacing:.05em; padding:8px 12px; text-transform:uppercase; transition:background .15s,color .15s}
   .copy:hover{background:var(--red); color:var(--ink)}
@@ -73,7 +74,8 @@
   .btn-ghost{color:var(--ink)}
   .btn-ghost:hover{border-color:var(--ink)}
   .nogo{font-family:var(--m); font-size:13px; color:var(--muted); margin:18px 0 0}
-  .nogo a{color:var(--red); text-decoration:none}
+  .nogo a{color:var(--red); text-decoration:underline; text-underline-offset:3px}
+  .install>.mono{min-width:0; overflow-x:auto; white-space:nowrap}
 
   .cut{height:2px; background:var(--red); transform-origin:left}
   .js .cut{transform:scaleX(0)} .js .cut.in{animation:cut .8s cubic-bezier(.7,0,.2,1) forwards}
@@ -125,7 +127,16 @@
 
   .toast{position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(16px); background:var(--red); color:var(--ink); font-family:var(--m); font-weight:700; font-size:13px; padding:11px 20px; opacity:0; transition:.25s; z-index:var(--z-toast); letter-spacing:.04em; text-transform:uppercase}
   .toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
-  @media(max-width:600px){.row{grid-template-columns:1fr}.row .num,.row p{grid-column:1}}
+  @media(max-width:600px){
+    .wrap{padding:0 20px}
+    .kicker{letter-spacing:.16em; font-size:11px}
+    .install{font-size:13px; flex:1 1 100%}
+    .actions{gap:12px}
+    .actions .btn{flex:1 1 auto; text-align:center}
+    .row{grid-template-columns:1fr}.row .num,.row p{grid-column:1}
+    section{padding:48px 0}
+    footer .foot-top{flex-direction:column; align-items:flex-start}
+  }
 </style>
 </head>
 <body>
@@ -138,7 +149,10 @@
       <a href="https://github.com/Lordymine/cts">github ↗</a>
     </div>
   </nav>
+</div>
 
+<main>
+<div class="wrap">
   <header>
     <p class="kicker rise d1">✂ Dev tool <span class="dot">·</span> single binary <span class="dot">·</span> v0.0.2</p>
     <h1>
@@ -217,6 +231,7 @@
     </div>
   </section>
 </div>
+</main>
 
 <footer>
   <div class="wrap">
