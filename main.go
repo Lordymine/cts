@@ -11,15 +11,15 @@ import (
 
 	"github.com/charmbracelet/huh"
 
-	"cts/internal/configroots"
-	"cts/internal/remove"
-	"cts/internal/scan"
-	"cts/internal/scan/agents"
-	"cts/internal/scan/mcp"
-	"cts/internal/scan/plugins"
-	"cts/internal/scan/skills"
-	"cts/internal/target"
-	"cts/internal/ui"
+	"github.com/Lordymine/cts/internal/configroots"
+	"github.com/Lordymine/cts/internal/remove"
+	"github.com/Lordymine/cts/internal/scan"
+	"github.com/Lordymine/cts/internal/scan/agents"
+	"github.com/Lordymine/cts/internal/scan/mcp"
+	"github.com/Lordymine/cts/internal/scan/plugins"
+	"github.com/Lordymine/cts/internal/scan/skills"
+	"github.com/Lordymine/cts/internal/target"
+	"github.com/Lordymine/cts/internal/ui"
 )
 
 // version is set at build time via -ldflags "-X main.version=...".

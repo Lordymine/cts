@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 
-	"cts/internal/target"
+	"github.com/Lordymine/cts/internal/target"
 )
 
 // Scanner inspects one category and returns what it found.

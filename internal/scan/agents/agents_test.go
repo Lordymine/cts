@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"cts/internal/configroots"
-	"cts/internal/target"
+	"github.com/Lordymine/cts/internal/configroots"
+	"github.com/Lordymine/cts/internal/target"
 )
 
 // fakeLister implements Lister without touching the real PATH.

@@ -10,7 +10,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"cts/internal/target"
+	"github.com/Lordymine/cts/internal/target"
 )
 
 // Result summarizes what the removal did (or would do, in dry-run).

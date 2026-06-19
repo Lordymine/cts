@@ -8,8 +8,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"cts/internal/dirsize"
-	"cts/internal/target"
+	"github.com/Lordymine/cts/internal/dirsize"
+	"github.com/Lordymine/cts/internal/target"
 )
 
 // Scanner sweeps a skills directory (e.g. ~/.claude/skills).

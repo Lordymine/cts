@@ -1,4 +1,4 @@
-module cts
+module github.com/Lordymine/cts
 
 go 1.24
 

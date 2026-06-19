@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"cts/internal/target"
+	"github.com/Lordymine/cts/internal/target"
 )
 
 func TestReportGroupsAndCountsDead(t *testing.T) {

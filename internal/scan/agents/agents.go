@@ -6,9 +6,9 @@ import (
 	"context"
 	"os"
 
-	"cts/internal/configroots"
-	"cts/internal/dirsize"
-	"cts/internal/target"
+	"github.com/Lordymine/cts/internal/configroots"
+	"github.com/Lordymine/cts/internal/dirsize"
+	"github.com/Lordymine/cts/internal/target"
 )
 
 // Lister reports whether an agent binary is installed. Injected so tests run

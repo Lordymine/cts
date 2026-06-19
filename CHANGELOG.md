@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.0.2] - 2026-06-18
+
+### Changed
+- Module path is now `github.com/Lordymine/cts`, so `go install github.com/Lordymine/cts@latest` works.
+
+### Fixed
+- CI: lowered the `go` directive to 1.24 so `golangci-lint` can analyze the code.
+- CI now runs only on pull requests to `main`; `main` is reserved for tag-driven releases.
+
 ## [0.0.1] - 2026-06-18
 
 Initial public release.
@@ -24,5 +33,6 @@ Initial public release.
 - **Cross-platform config roots** (`internal/configroots`): agent configs are scanned across the home directory, `~/.config` (XDG), Windows `AppData`, and macOS `~/Library`.
 - **CI** (vet, lint, race tests, build) and a tag-triggered **release** workflow building binaries for Linux, macOS and Windows.
 
-[Unreleased]: https://github.com/Lordymine/cts/compare/v0.0.1...HEAD
+[Unreleased]: https://github.com/Lordymine/cts/compare/v0.0.2...HEAD
+[0.0.2]: https://github.com/Lordymine/cts/releases/tag/v0.0.2
 [0.0.1]: https://github.com/Lordymine/cts/releases/tag/v0.0.1

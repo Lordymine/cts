@@ -12,7 +12,7 @@ import (
 	"sort"
 	"strings"
 
-	"cts/internal/target"
+	"github.com/Lordymine/cts/internal/target"
 )
 
 // Scanner reads a config file (e.g. ~/.claude.json). hasCommand is injected so

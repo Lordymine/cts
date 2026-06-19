@@ -9,7 +9,7 @@ import (
 
 	"github.com/charmbracelet/lipgloss"
 
-	"cts/internal/target"
+	"github.com/Lordymine/cts/internal/target"
 )
 
 var (

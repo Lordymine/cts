@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"cts/internal/target"
+	"github.com/Lordymine/cts/internal/target"
 )
 
 // recordingRunner records commands without executing them.

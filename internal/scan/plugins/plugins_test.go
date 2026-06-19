@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"cts/internal/target"
+	"github.com/Lordymine/cts/internal/target"
 )
 
 func TestScanFlagsOrphanMarketplace(t *testing.T) {

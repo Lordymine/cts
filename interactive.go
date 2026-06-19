@@ -10,10 +10,10 @@ import (
 
 	"github.com/charmbracelet/huh"
 
-	"cts/internal/remove"
-	"cts/internal/scan"
-	"cts/internal/target"
-	"cts/internal/ui"
+	"github.com/Lordymine/cts/internal/remove"
+	"github.com/Lordymine/cts/internal/scan"
+	"github.com/Lordymine/cts/internal/target"
+	"github.com/Lordymine/cts/internal/ui"
 )
 
 // runInteractive: scan → interactive list (dead pre-checked) → confirm → remove

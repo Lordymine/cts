@@ -11,8 +11,8 @@ import (
 	"sort"
 	"strings"
 
-	"cts/internal/dirsize"
-	"cts/internal/target"
+	"github.com/Lordymine/cts/internal/dirsize"
+	"github.com/Lordymine/cts/internal/target"
 )
 
 // subdirs of the plugins directory where each marketplace leaves a trace on disk.
