@@ -17,15 +17,21 @@ var (
 	dim      = lipgloss.NewStyle().Foreground(lipgloss.Color("242"))
 	deadSt   = lipgloss.NewStyle().Foreground(lipgloss.Color("203"))
 	catSt    = lipgloss.NewStyle().Foreground(lipgloss.Color("111")).Bold(true)
-	boxSt    = lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).BorderForeground(lipgloss.Color("203")).Padding(0, 2)
 	catOrder = []target.Category{target.Skill, target.Agent, target.Plugin, target.MCP}
 )
 
-// Logo devolve o banner do cts.
+const logoArt = ` ██████╗████████╗███████╗
+██╔════╝╚══██╔══╝██╔════╝
+██║        ██║   ███████╗
+██║        ██║   ╚════██║
+╚██████╗   ██║   ███████║
+ ╚═════╝   ╚═╝   ╚══════╝`
+
+// Logo devolve o banner ASCII do cts.
 func Logo() string {
-	title := accent.Render("cts") + dim.Render("  ·  Cut The Shit")
-	sub := dim.Render("limpa skills, agentes, plugins e MCP mortos da máquina")
-	return boxSt.Render(title + "\n" + sub)
+	art := accent.Render(logoArt)
+	tag := dim.Render("Cut The Shit · limpa skills, agentes, plugins e MCP mortos")
+	return "\n" + art + "\n\n" + tag + "\n"
 }
 
 // Help devolve a ajuda formatada.
