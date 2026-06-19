@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="430" height="206" viewBox="0 0 430 206" role="img" aria-label="cts — Cut The Shit">
+  <style>
+    .art { font-family: "Cascadia Code", "JetBrains Mono", Consolas, "DejaVu Sans Mono", Menlo, monospace; font-size: 24px; font-weight: 700; fill: #ff5f5f; }
+    .tag { font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; font-size: 14px; fill: #8b949e; }
+  </style>
+  <text class="art" xml:space="preserve">
+    <tspan x="42" y="34"> ██████╗████████╗███████╗</tspan>
+    <tspan x="42" y="60">██╔════╝╚══██╔══╝██╔════╝</tspan>
+    <tspan x="42" y="86">██║        ██║   ███████╗</tspan>
+    <tspan x="42" y="112">██║        ██║   ╚════██║</tspan>
+    <tspan x="42" y="138">╚██████╗   ██║   ███████║</tspan>
+    <tspan x="42" y="164"> ╚═════╝   ╚═╝   ╚══════╝</tspan>
+  </text>
+  <text class="tag" x="215" y="192" text-anchor="middle">Cut The Shit — reclaim your machine from dead AI tooling</text>
+</svg>

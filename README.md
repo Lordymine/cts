@@ -1,21 +1,15 @@
 <div align="center">
 
-```
- ██████╗████████╗███████╗
-██╔════╝╚══██╔══╝██╔════╝
-██║        ██║   ███████╗
-██║        ██║   ╚════██║
-╚██████╗   ██║   ███████║
- ╚═════╝   ╚═╝   ╚══════╝
-```
+<img src="assets/logo.svg" alt="cts — Cut The Shit" width="460">
 
 ### Cut The Shit — reclaim your machine from dead AI tooling
 
 A fast, safe CLI that finds and removes **dead skills, agents, plugins and MCP servers** left behind by AI coding tools — with dry-run, confirmation and automatic backups.
 
-![Go](https://img.shields.io/badge/Go-1.25-00ADD8?logo=go&logoColor=white)
+[![CI](https://github.com/Lordymine/cts/actions/workflows/ci.yml/badge.svg)](https://github.com/Lordymine/cts/actions/workflows/ci.yml)
+![Go](https://img.shields.io/badge/Go-1.24-00ADD8?logo=go&logoColor=white)
 ![Platforms](https://img.shields.io/badge/platforms-Linux%20·%20macOS%20·%20Windows-444)
-![Tests](https://img.shields.io/badge/tests-passing-brightgreen)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 ![Single binary](https://img.shields.io/badge/single%20binary-yes-success)
 
 </div>
@@ -167,7 +161,7 @@ Every push runs CI (format, vet, `golangci-lint`, race tests, build). Contributi
 
 ## License
 
-Choose and add a `LICENSE` before publishing — **MIT** is recommended for a tool like this.
+Released under the [MIT License](LICENSE).
 
 ---
 
