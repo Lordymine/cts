@@ -1,24 +1,24 @@
-# ADR 0001 — `Scanner` como costura entre o CLI e as categorias
+# ADR 0001 — `Scanner` as the seam between the CLI and the categories
 
-- **Status:** aceito
-- **Data:** incremento inicial
+- **Status:** accepted
+- **Date:** initial increment
 
-## Contexto
+## Context
 
-O cts precisa escanear 4 categorias distintas de lixo (skills, agentes, plugins, MCP), e cada uma vive num lugar diferente e tem regras próprias de "está morto?". O CLI precisa rodar todas e juntar o resultado num relatório único.
+cts needs to scan 4 distinct categories of junk (skills, agents, plugins, MCP), and each one lives in a different place and has its own "is it dead?" rules. The CLI needs to run them all and combine the results into a single report.
 
-## Decisão
+## Decision
 
-Definir uma interface pequena `Scanner` (`Category()` + `Scan(ctx) ([]target.Target, error)`) no pacote `scan`, e implementar **um adapter por categoria** em `internal/scan/<categoria>`. O `scan.Run` recebe os scanners por parâmetro e acumula resultado e erro (`errors.Join`).
+Define a small `Scanner` interface (`Category()` + `Scan(ctx) ([]target.Target, error)`) in the `scan` package, and implement **one adapter per category** in `internal/scan/<category>`. `scan.Run` receives the scanners as a parameter and accumulates results and errors (`errors.Join`).
 
-## Por que (os 3 critérios de ADR)
+## Why (the 3 ADR criteria)
 
-- **Difícil de reverter:** a costura define como toda categoria nova é plugada; mudar depois mexe em todos os adapters.
-- **Surpreendente sem contexto:** alguém poderia esperar um grande `switch` por categoria no main; a escolha por interface+adapters é deliberada.
-- **Trade-off real:** interface+adapters (mais arquivos, extensível, testável isolado) vs. um único arquivo com tudo (menos cerimônia, mas acopla as 4 lógicas e dificulta teste).
+- **Hard to reverse:** the seam defines how every new category is plugged in; changing it later touches every adapter.
+- **Surprising without context:** someone might expect a big `switch` over categories in main; choosing interface+adapters is deliberate.
+- **Real trade-off:** interface+adapters (more files, extensible, testable in isolation) vs. a single file with everything (less ceremony, but couples the 4 logics and makes testing harder).
 
-## Consequências
+## Consequences
 
-- Adicionar categoria = criar um adapter e registrá-lo no `main`. Não toca nos outros.
-- Cada adapter é testável isolado com `t.TempDir()`.
-- A costura é justificada por **variação real** (4 adapters), não hipotética — não seria criada para 1 só.
+- Adding a category = creating an adapter and registering it in `main`. It doesn't touch the others.
+- Each adapter is testable in isolation with `t.TempDir()`.
+- The seam is justified by **real variation** (4 adapters), not hypothetical — it wouldn't be created for just 1.

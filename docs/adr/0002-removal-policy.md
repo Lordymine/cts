@@ -1,31 +1,31 @@
-# ADR 0002 — Política de remoção: morto automático, ativo explícito, keepers protegidos
+# ADR 0002 — Removal policy: dead removed automatically, active only explicitly, keepers protected
 
-- **Status:** aceito
-- **Data:** incremento de remoção
+- **Status:** accepted
+- **Date:** removal increment
 
-## Contexto
+## Context
 
-O cts lida com duas coisas distintas:
-1. **Morto / órfão / quebrado** — config sem binário, symlink quebrado. Lixo comprovado; o cts tem certeza de que é seguro remover.
-2. **Ativo / instalado mas indesejado** — ex.: `qwen` instalado e funcionando que o usuário não quer mais. O cts **não tem como saber sozinho** que um item ativo é indesejado — isso é julgamento do usuário.
+cts deals with two distinct things:
+1. **Dead / orphan / broken** — config with no binary, broken symlink. Proven junk; cts is certain it is safe to remove.
+2. **Active / installed but unwanted** — e.g. `qwen` installed and working that the user no longer wants. cts **has no way to know on its own** that an active item is unwanted — that is the user's judgment.
 
-Tratar os dois igual seria perigoso (apagar algo que funciona) ou inútil (só limpar lixo óbvio, sem replicar a faxina real que removeu agentes ativos).
+Treating both the same would be dangerous (deleting something that works) or useless (cleaning only obvious junk, without replicating the real cleanup that removed active agents).
 
-## Decisão
+## Decision
 
-- **`scan`** mostra tudo: mortos (marcados `✗`) + ativos (inventário).
-- **`purge`** (lote automático) remove **só os mortos** (`Dead == true`). Nunca toca em ativo sozinho.
-- **Ativos só por seleção explícita.** Item ativo (não quebrado) nunca entra no `purge`. Para removê-lo, o usuário **seleciona na lista** (`cut <nome>` ou seleção interativa) — escolha deliberada, item a item, com confirmação.
-- **Sem lista de "protegidos" hardcoded.** O cts não tem como saber quais agentes são "keepers" — isso é conhecimento do usuário, frágil e arbitrário. A proteção do ativo vem de ser **seleção-only**; o **backup** é o undo universal contra acidente.
-- **Dry-run é o default** em qualquer remoção; **backup** em `.cts-backups/` antes de apagar.
+- **`scan`** shows everything: dead items (marked `✗`) + active items (inventory).
+- **`purge`** (automatic batch) removes **only the dead items** (`Dead == true`). It never touches an active item on its own.
+- **Active items only by explicit selection.** An active (non-broken) item never enters `purge`. To remove one, the user **selects it from the list** (`cut <name>` or interactive selection) — a deliberate, item-by-item choice, with confirmation.
+- **No hardcoded "protected" list.** cts has no way to know which agents are "keepers" — that is the user's knowledge, fragile and arbitrary. Protection of an active item comes from being **selection-only**; **backup** is the universal undo against accidents.
+- **Dry-run is the default** in any removal; **backup** in `.cts-backups/` before deleting.
 
-## Por que (os 3 critérios)
+## Why (the 3 criteria)
 
-- **Difícil de reverter:** define o contrato de segurança de toda remoção futura.
-- **Surpreendente sem contexto:** alguém poderia esperar que `purge` apagasse tudo que `scan` listou; aqui `purge` é só os mortos, de propósito.
-- **Trade-off real:** poder (remover ativo) vs. segurança (não apagar o que funciona sem o usuário pedir). Resolvido separando a **iniciativa**: o cts age sozinho só no lixo; o resto é escolha explícita.
+- **Hard to reverse:** it defines the safety contract for all future removal.
+- **Surprising without context:** someone might expect `purge` to delete everything `scan` listed; here `purge` is only the dead items, on purpose.
+- **Real trade-off:** power (removing active items) vs. safety (not deleting what works without the user asking). Resolved by separating the **initiative**: cts acts on its own only on junk; the rest is an explicit choice.
 
-## Consequências
+## Consequences
 
-- A camada `internal/remove` **não tem lista de protegidos**: `purge` filtra `Dead == true`; ativo só sai por nome/seleção explícita.
-- **Backup e dry-run são responsabilidade da camada de remoção**, não dos scanners — os scanners continuam read-only. O backup é o que protege contra remoção acidental de um ativo.
+- The `internal/remove` layer has **no protected list**: `purge` filters `Dead == true`; an active item leaves only by explicit name/selection.
+- **Backup and dry-run are the removal layer's responsibility**, not the scanners' — the scanners stay read-only. Backup is what protects against accidental removal of an active item.

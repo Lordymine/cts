@@ -1,49 +1,50 @@
-// Package agents acha CLIs de agente e marca config órfã: pasta de config
-// cujo binário não está mais instalado (ex.: ~/.qwen sem o `qwen` no PATH).
+// Package agents finds agent CLIs and flags orphan config: a config directory
+// whose binary is no longer installed (e.g. ~/.qwen with no `qwen` on PATH).
 package agents
 
 import (
 	"context"
 	"os"
-	"path/filepath"
 
+	"cts/internal/configroots"
 	"cts/internal/dirsize"
 	"cts/internal/target"
 )
 
-// Lister diz se o binário de um agente está instalado. É injetado de propósito:
-// o teste passa um fake e não toca no PATH real da máquina.
+// Lister reports whether an agent binary is installed. Injected so tests run
+// without touching the real PATH.
 type Lister interface {
 	IsInstalled(bin string) bool
 }
 
-// Agent é uma entrada do catálogo: o binário a checar, as pastas de config, e
-// como desinstalar o pacote (quando instalado).
+// Agent is a catalog entry: the binary to check, its config dir base names, and
+// how to uninstall the package (when installed).
 type Agent struct {
 	Name    string
 	Bin     string
-	Dirs    []string // nomes de pasta sob home (ex.: ".qwen", ".gqwen")
-	Manager string   // "npm" | "bun" | "uv" — vazio = sem comando de uninstall
-	Package string   // nome do pacote no manager
+	Dirs    []string // config dir base names, e.g. "qwen" (resolved per root)
+	Manager string   // "npm" | "bun" | "uv" — empty means no uninstall command
+	Package string   // package name in the manager
 }
 
-// Scanner cruza o catálogo com o que está instalado e o que há em disco.
+// Scanner cross-checks the catalog against what is installed and what is on disk
+// across the OS config roots.
 type Scanner struct {
-	home    string
+	roots   []configroots.Root
 	lister  Lister
 	catalog []Agent
 }
 
-// New cria um Scanner. home é onde vivem as pastas de config (ex.: o diretório do usuário).
-func New(home string, lister Lister, catalog []Agent) Scanner {
-	return Scanner{home: home, lister: lister, catalog: catalog}
+// New creates a Scanner. roots are the OS config base dirs (see configroots).
+func New(roots []configroots.Root, lister Lister, catalog []Agent) Scanner {
+	return Scanner{roots: roots, lister: lister, catalog: catalog}
 }
 
-// Category satisfaz scan.Scanner.
+// Category satisfies scan.Scanner.
 func (s Scanner) Category() target.Category { return target.Agent }
 
-// Scan percorre o catálogo. Um agente só vira alvo se tiver presença na máquina
-// (instalado ou com pasta de config). Config sem binário = morto.
+// Scan walks the catalog. An agent becomes a target only if it has a presence on
+// the machine (installed or with a config dir). Config without binary = dead.
 func (s Scanner) Scan(ctx context.Context) ([]target.Target, error) {
 	var targets []target.Target
 	for _, a := range s.catalog {
@@ -57,22 +58,23 @@ func (s Scanner) Scan(ctx context.Context) ([]target.Target, error) {
 	return targets, nil
 }
 
-// inspect monta o Target de um agente. present=false quando não há nada dele na
-// máquina (não instalado e sem config) — aí não é alvo de nada.
+// inspect builds the target for an agent, looking across all config roots.
 func (s Scanner) inspect(a Agent) (target.Target, bool) {
 	var paths []string
 	var size int64
-	for _, d := range a.Dirs {
-		p := filepath.Join(s.home, d)
-		info, err := os.Stat(p)
-		if err != nil {
-			continue
-		}
-		paths = append(paths, p)
-		if info.IsDir() {
-			size += dirsize.Of(p)
-		} else {
-			size += info.Size()
+	for _, root := range s.roots {
+		for _, base := range a.Dirs {
+			p := root.Entry(base)
+			info, err := os.Stat(p)
+			if err != nil {
+				continue
+			}
+			paths = append(paths, p)
+			if info.IsDir() {
+				size += dirsize.Of(p)
+			} else {
+				size += info.Size()
+			}
 		}
 	}
 
@@ -83,16 +85,16 @@ func (s Scanner) inspect(a Agent) (target.Target, bool) {
 
 	t := target.Target{Name: a.Name, Category: target.Agent, Paths: paths, SizeBytes: size}
 	if installed {
-		t.Uninstall = uninstallCmd(a) // só desinstala o que está instalado
+		t.Uninstall = uninstallCmd(a) // only uninstall what is installed
 	} else if len(paths) > 0 {
 		t.Dead = true
-		t.Reason = "config órfã (binário não instalado)"
+		t.Reason = "orphan config (binary not installed)"
 	}
 	return t, true
 }
 
-// uninstallCmd monta o comando de desinstalação conforme o gerenciador. Sem
-// pacote/manager conhecido, devolve nil (o alvo será removido só por arquivo).
+// uninstallCmd builds the uninstall command for the agent's package manager.
+// With no known package/manager it returns nil (the target is removed by file only).
 func uninstallCmd(a Agent) []string {
 	if a.Package == "" {
 		return nil
@@ -109,23 +111,23 @@ func uninstallCmd(a Agent) []string {
 	}
 }
 
-// DefaultCatalog lista agentes de terceiros que costumam deixar config órfã.
-// Extensível — adicione conforme aparecerem. Os agentes principais (claude,
-// codex, pi, opencode) ficam de fora: são mantidos, não candidatos a limpeza.
+// DefaultCatalog lists third-party agents that tend to leave orphan config.
+// Extend as needed. The primary agents (claude, codex, pi, opencode) are left
+// out on purpose: they are kept, not cleanup candidates.
 func DefaultCatalog() []Agent {
 	return []Agent{
-		{Name: "qwen", Bin: "qwen", Dirs: []string{".qwen", ".gqwen"}, Manager: "npm", Package: "@qwen-code/qwen-code"},
-		{Name: "gemini", Bin: "gemini", Dirs: []string{".gemini"}, Manager: "npm", Package: "@google/gemini-cli"},
-		{Name: "kimi", Bin: "kimi", Dirs: []string{".kimi"}, Manager: "uv", Package: "kimi-cli"},
-		{Name: "verboo", Bin: "verboo", Dirs: []string{".verboo"}, Manager: "npm", Package: "@verboo/code"},
-		{Name: "command-code", Bin: "command-code", Dirs: []string{".commandcode"}, Manager: "npm", Package: "command-code"},
-		{Name: "mimo", Bin: "mimo", Dirs: []string{".mimo"}, Manager: "npm", Package: "@mimo-ai/cli"},
-		// Sem manager conhecido: removidos só por arquivo (config órfã).
-		{Name: "autocodex", Bin: "autocodex", Dirs: []string{".autocodex"}},
-		{Name: "goclaw", Bin: "goclaw", Dirs: []string{".goclaw"}},
-		{Name: "hermes", Bin: "hermes", Dirs: []string{".hermes"}},
-		{Name: "codebuddy", Bin: "codebuddy", Dirs: []string{".codebuddy"}},
-		{Name: "iflow", Bin: "iflow", Dirs: []string{".iflow"}},
-		{Name: "zencoder", Bin: "zencoder", Dirs: []string{".zencoder"}},
+		{Name: "qwen", Bin: "qwen", Dirs: []string{"qwen", "gqwen"}, Manager: "npm", Package: "@qwen-code/qwen-code"},
+		{Name: "gemini", Bin: "gemini", Dirs: []string{"gemini"}, Manager: "npm", Package: "@google/gemini-cli"},
+		{Name: "kimi", Bin: "kimi", Dirs: []string{"kimi"}, Manager: "uv", Package: "kimi-cli"},
+		{Name: "verboo", Bin: "verboo", Dirs: []string{"verboo"}, Manager: "npm", Package: "@verboo/code"},
+		{Name: "command-code", Bin: "command-code", Dirs: []string{"commandcode"}, Manager: "npm", Package: "command-code"},
+		{Name: "mimo", Bin: "mimo", Dirs: []string{"mimo"}, Manager: "npm", Package: "@mimo-ai/cli"},
+		// No known manager: removed by file only (orphan config).
+		{Name: "autocodex", Bin: "autocodex", Dirs: []string{"autocodex"}},
+		{Name: "goclaw", Bin: "goclaw", Dirs: []string{"goclaw"}},
+		{Name: "hermes", Bin: "hermes", Dirs: []string{"hermes"}},
+		{Name: "codebuddy", Bin: "codebuddy", Dirs: []string{"codebuddy"}},
+		{Name: "iflow", Bin: "iflow", Dirs: []string{"iflow"}},
+		{Name: "zencoder", Bin: "zencoder", Dirs: []string{"zencoder"}},
 	}
 }

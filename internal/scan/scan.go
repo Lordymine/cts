@@ -1,4 +1,4 @@
-// Package scan coordena os scanners de cada categoria.
+// Package scan coordinates the per-category scanners.
 package scan
 
 import (
@@ -9,15 +9,15 @@ import (
 	"cts/internal/target"
 )
 
-// Scanner inspeciona uma categoria e devolve o que achou.
-// Interface pequena de propósito: dá pra implementar e testar sem cerimônia.
+// Scanner inspects one category and returns what it found.
+// Deliberately small: easy to implement and test without ceremony.
 type Scanner interface {
 	Category() target.Category
 	Scan(ctx context.Context) ([]target.Target, error)
 }
 
-// Run roda todos os scanners e junta os alvos. Erro de um scanner é
-// embrulhado com a categoria e acumulado — não aborta os outros.
+// Run runs every scanner and merges the targets. A scanner error is wrapped with
+// its category and accumulated — it does not abort the others.
 func Run(ctx context.Context, scanners ...Scanner) ([]target.Target, error) {
 	var all []target.Target
 	var errs []error

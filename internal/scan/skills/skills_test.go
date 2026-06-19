@@ -9,10 +9,10 @@ import (
 	"cts/internal/target"
 )
 
-func TestScanMarcaSkillSemSkillMdComoMorta(t *testing.T) {
+func TestScanFlagsSkillWithoutSkillMdAsDead(t *testing.T) {
 	root := t.TempDir()
-	writeFile(t, filepath.Join(root, "healthy", "SKILL.md"), "# ok") // saudável
-	mkdir(t, filepath.Join(root, "broken"))                          // sem SKILL.md → morta
+	writeFile(t, filepath.Join(root, "healthy", "SKILL.md"), "# ok") // healthy
+	mkdir(t, filepath.Join(root, "broken"))                          // no SKILL.md → dead
 
 	got, err := New(root).Scan(context.Background())
 	if err != nil {
@@ -21,30 +21,30 @@ func TestScanMarcaSkillSemSkillMdComoMorta(t *testing.T) {
 
 	wantDead := map[string]bool{"healthy": false, "broken": true}
 	if len(got) != len(wantDead) {
-		t.Fatalf("achou %d skills, queria %d", len(got), len(wantDead))
+		t.Fatalf("found %d skills, want %d", len(got), len(wantDead))
 	}
 	for _, tg := range got {
 		if tg.Category != target.Skill {
-			t.Errorf("%s: categoria %q, queria %q", tg.Name, tg.Category, target.Skill)
+			t.Errorf("%s: category %q, want %q", tg.Name, tg.Category, target.Skill)
 		}
 		want, ok := wantDead[tg.Name]
 		if !ok {
-			t.Errorf("skill inesperada: %s", tg.Name)
+			t.Errorf("unexpected skill: %s", tg.Name)
 			continue
 		}
 		if tg.Dead != want {
-			t.Errorf("%s: dead=%v, queria %v (reason=%q)", tg.Name, tg.Dead, want, tg.Reason)
+			t.Errorf("%s: dead=%v, want %v (reason=%q)", tg.Name, tg.Dead, want, tg.Reason)
 		}
 	}
 }
 
-func TestScanDirInexistenteNaoEhErro(t *testing.T) {
-	got, err := New(filepath.Join(t.TempDir(), "nao-existe")).Scan(context.Background())
+func TestScanMissingDirIsNotError(t *testing.T) {
+	got, err := New(filepath.Join(t.TempDir(), "does-not-exist")).Scan(context.Background())
 	if err != nil {
-		t.Fatalf("dir inexistente deveria ser silencioso, veio: %v", err)
+		t.Fatalf("a missing dir should be silent, got: %v", err)
 	}
 	if len(got) != 0 {
-		t.Fatalf("queria 0 alvos, veio %d", len(got))
+		t.Fatalf("want 0 targets, got %d", len(got))
 	}
 }
 

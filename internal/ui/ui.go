@@ -1,5 +1,5 @@
-// Package ui cuida da apresentação: logo, ajuda e relatório formatado.
-// Só renderiza — não contém lógica de scan ou remoção.
+// Package ui handles presentation: logo, help and the formatted report.
+// It only renders — it holds no scan or removal logic.
 package ui
 
 import (
@@ -27,36 +27,36 @@ const logoArt = ` ██████╗████████╗████�
 ╚██████╗   ██║   ███████║
  ╚═════╝   ╚═╝   ╚══════╝`
 
-// Logo devolve o banner ASCII do cts.
+// Logo returns the cts ASCII banner.
 func Logo() string {
 	art := accent.Render(logoArt)
-	tag := dim.Render("Cut The Shit · limpa skills, agentes, plugins e MCP mortos")
+	tag := dim.Render("Cut The Shit · clean dead skills, agents, plugins and MCP servers")
 	return "\n" + art + "\n\n" + tag + "\n"
 }
 
-// Help devolve a ajuda formatada.
+// Help returns the formatted help text.
 func Help() string {
 	var b strings.Builder
-	b.WriteString(accent.Render("cts") + dim.Render(" — comandos") + "\n\n")
+	b.WriteString(accent.Render("cts") + dim.Render(" — commands") + "\n\n")
 	rows := [][2]string{
-		{"cts", "menu interativo"},
-		{"cts scan", "lista o que há na máquina (read-only)"},
-		{"cts clean", "escolher numa lista e remover"},
-		{"cts purge", "mostra o que removeria (só mortos, dry-run)"},
-		{"cts purge --yes", "remove os mortos de verdade (com backup)"},
-		{"cts help", "esta ajuda"},
+		{"cts", "interactive menu"},
+		{"cts scan", "list what's on the machine (read-only)"},
+		{"cts clean", "pick items from a list and remove"},
+		{"cts purge", "show what it would remove (dead only, dry-run)"},
+		{"cts purge --yes", "actually remove the dead ones (with backup)"},
+		{"cts help", "this help"},
 	}
 	for _, r := range rows {
 		b.WriteString("  " + accent.Render(fmt.Sprintf("%-17s", r[0])) + dim.Render(r[1]) + "\n")
 	}
-	b.WriteString("\n" + dim.Render("Seguro: dry-run por padrão, confirma antes de apagar, backup em .cts-backups/."))
+	b.WriteString("\n" + dim.Render("Safe: dry-run by default, confirms before deleting, backup in .cts-backups/."))
 	return b.String()
 }
 
-// Report formata os alvos agrupados por categoria.
+// Report formats the targets grouped by category.
 func Report(targets []target.Target) string {
 	if len(targets) == 0 {
-		return dim.Render("nada encontrado. Máquina limpa. ✨") + "\n"
+		return dim.Render("nothing found. Machine is clean. ✨") + "\n"
 	}
 
 	groups := make(map[target.Category][]target.Target)
@@ -77,7 +77,7 @@ func Report(targets []target.Target) string {
 			cells := fmt.Sprintf("%-28s %10s", t.Name, HumanSize(t.SizeBytes))
 			if t.Dead {
 				deadN++
-				b.WriteString(deadSt.Render("  ✗ " + cells))
+				b.WriteString(deadSt.Render("  x " + cells))
 			} else {
 				b.WriteString("    " + cells)
 			}
@@ -87,11 +87,11 @@ func Report(targets []target.Target) string {
 			b.WriteString("\n")
 		}
 	}
-	b.WriteString("\n" + dim.Render(fmt.Sprintf("%d alvos · %d mortos", len(targets), deadN)) + "\n")
+	b.WriteString("\n" + dim.Render(fmt.Sprintf("%d targets · %d dead", len(targets), deadN)) + "\n")
 	return b.String()
 }
 
-// HumanSize formata bytes em algo legível (1.5KB, 279.0MB).
+// HumanSize formats bytes into something readable (1.5KB, 279.0MB).
 func HumanSize(b int64) string {
 	const unit = 1024
 	if b < unit {

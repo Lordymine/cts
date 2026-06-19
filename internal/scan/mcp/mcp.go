@@ -1,6 +1,6 @@
-// Package mcp inventaria os MCP servers configurados e marca os de stdio cujo
-// comando não está instalado. Remover um MCP é editar o JSON (config-edit), não
-// apagar arquivo — por isso os alvos saem sem Paths.
+// Package mcp inventories the configured MCP servers and flags the stdio ones
+// whose command is not installed. Removing an MCP server is a config edit (via
+// `claude mcp remove`), not a file delete — so targets come out without Paths.
 package mcp
 
 import (
@@ -15,19 +15,19 @@ import (
 	"cts/internal/target"
 )
 
-// Scanner lê um arquivo de config (ex.: ~/.claude.json). hasCommand é injetado
-// para testar sem depender do PATH real.
+// Scanner reads a config file (e.g. ~/.claude.json). hasCommand is injected so
+// tests don't depend on the real PATH.
 type Scanner struct {
 	configPath string
 	hasCommand func(string) bool
 }
 
-// New cria um Scanner. hasCommand diz se um binário existe (ex.: exec.LookPath).
+// New creates a Scanner. hasCommand reports whether a binary exists (e.g. exec.LookPath).
 func New(configPath string, hasCommand func(string) bool) Scanner {
 	return Scanner{configPath: configPath, hasCommand: hasCommand}
 }
 
-// Category satisfaz scan.Scanner.
+// Category satisfies scan.Scanner.
 func (s Scanner) Category() target.Category { return target.MCP }
 
 type config struct {
@@ -37,20 +37,20 @@ type config struct {
 	} `json:"projects"`
 }
 
-// server: só o command importa — vazio significa transporte http/sse, sem
-// binário pra checar.
+// server: only command matters — empty means an http/sse transport with no
+// binary to check.
 type server struct {
 	Command string `json:"command"`
 }
 
-// Scan inventaria os MCP servers do escopo user e de cada projeto.
+// Scan inventories the MCP servers from the user scope and from each project.
 func (s Scanner) Scan(ctx context.Context) ([]target.Target, error) {
 	data, err := os.ReadFile(s.configPath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return nil, nil // sem config: nada a inventariar
+			return nil, nil // no config: nothing to inventory
 		}
-		return nil, fmt.Errorf("ler %s: %w", s.configPath, err)
+		return nil, fmt.Errorf("read %s: %w", s.configPath, err)
 	}
 
 	var cfg config
@@ -68,19 +68,20 @@ func (s Scanner) Scan(ctx context.Context) ([]target.Target, error) {
 	for _, proj := range sortedKeys(cfg.Projects) {
 		servers := cfg.Projects[proj].McpServers
 		for _, name := range sortedKeys(servers) {
-			targets = append(targets, s.inspect(name, servers[name], "projeto: "+filepath.Base(proj), false))
+			targets = append(targets, s.inspect(name, servers[name], "project: "+filepath.Base(proj), false))
 		}
 	}
 	return targets, nil
 }
 
-// inspect monta o Target de um MCP. Paths fica vazio de propósito; remoção é via
-// comando. Só o escopo user ganha comando automático (`claude mcp remove -s user`);
-// servers de projeto ficam como inventário (o usuário remove dentro do projeto).
+// inspect builds the target for an MCP server. Paths is intentionally empty;
+// removal is via command. Only the user scope gets an automatic command
+// (`claude mcp remove -s user`); project servers stay inventory-only (the user
+// removes them inside the project).
 func (s Scanner) inspect(name string, srv server, scope string, userScope bool) target.Target {
 	reason := scope
 	if bin := firstWord(srv.Command); bin != "" && !s.hasCommand(bin) {
-		reason = scope + " — comando não encontrado: " + bin
+		reason = scope + " — command not found: " + bin
 	}
 	t := target.Target{Name: name, Category: target.MCP, Reason: reason}
 	if userScope {
@@ -97,7 +98,7 @@ func firstWord(cmd string) string {
 	return fields[0]
 }
 
-// sortedKeys devolve as chaves de um mapa em ordem — saída determinística.
+// sortedKeys returns a map's keys in order — deterministic output.
 func sortedKeys[T any](m map[string]T) []string {
 	keys := make([]string, 0, len(m))
 	for k := range m {

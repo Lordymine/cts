@@ -9,9 +9,9 @@ import (
 	"cts/internal/target"
 )
 
-func TestScanMarcaMarketplaceOrfao(t *testing.T) {
+func TestScanFlagsOrphanMarketplace(t *testing.T) {
 	root := t.TempDir()
-	// manifest: só claude-plugins-official tem plugin instalado
+	// manifest: only claude-plugins-official has an installed plugin
 	writeFile(t, filepath.Join(root, "installed_plugins.json"),
 		`{"plugins":{"github@claude-plugins-official":[{}],"context7@claude-plugins-official":[{}]}}`)
 	mkdir(t, filepath.Join(root, "marketplaces", "claude-plugins-official"))
@@ -26,36 +26,36 @@ func TestScanMarcaMarketplaceOrfao(t *testing.T) {
 	byName := make(map[string]target.Target, len(got))
 	for _, tg := range got {
 		if tg.Category != target.Plugin {
-			t.Errorf("%s: categoria %q, queria %q", tg.Name, tg.Category, target.Plugin)
+			t.Errorf("%s: category %q, want %q", tg.Name, tg.Category, target.Plugin)
 		}
 		byName[tg.Name] = tg
 	}
 
 	if len(got) != 2 {
-		t.Fatalf("queria 2 marketplaces, veio %d: %+v", len(got), got)
+		t.Fatalf("want 2 marketplaces, got %d: %+v", len(got), got)
 	}
 	if byName["claude-plugins-official"].Dead {
-		t.Error("claude-plugins-official tem plugin instalado → não é órfão")
+		t.Error("claude-plugins-official has an installed plugin → not orphan")
 	}
 	td := byName["thedotmack"]
 	if !td.Dead {
-		t.Error("thedotmack sem plugin instalado → órfão")
+		t.Error("thedotmack has no installed plugin → orphan")
 	}
 	if len(td.Paths) != 2 {
-		t.Errorf("thedotmack deveria juntar marketplaces/ + cache/ (2 paths), veio %d", len(td.Paths))
+		t.Errorf("thedotmack should join marketplaces/ + cache/ (2 paths), got %d", len(td.Paths))
 	}
 }
 
-func TestScanSemManifestTudoOrfao(t *testing.T) {
+func TestScanNoManifestEverythingOrphan(t *testing.T) {
 	root := t.TempDir()
-	mkdir(t, filepath.Join(root, "marketplaces", "qualquer"))
+	mkdir(t, filepath.Join(root, "marketplaces", "whatever"))
 
 	got, err := New(root).Scan(context.Background())
 	if err != nil {
 		t.Fatalf("Scan: %v", err)
 	}
 	if len(got) != 1 || !got[0].Dead {
-		t.Fatalf("sem manifest, marketplace deveria ser órfão: %+v", got)
+		t.Fatalf("with no manifest, the marketplace should be orphan: %+v", got)
 	}
 }
 

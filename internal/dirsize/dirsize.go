@@ -1,4 +1,4 @@
-// Package dirsize soma o tamanho dos arquivos sob um diretório.
+// Package dirsize sums the size of the files under a directory.
 package dirsize
 
 import (
@@ -6,9 +6,9 @@ import (
 	"path/filepath"
 )
 
-// Of soma o tamanho (bytes) dos arquivos sob path. Best-effort: erro num
-// caminho isolado não derruba a contagem. Resolve o symlink raiz antes de medir
-// (uma skill symlinkada mediria 0 sem isso).
+// Of sums the size (bytes) of the files under path. Best-effort: an error on a
+// single path does not break the count. It resolves the root symlink before
+// walking (a symlinked skill would otherwise measure 0).
 func Of(path string) int64 {
 	if resolved, err := filepath.EvalSymlinks(path); err == nil {
 		path = resolved
