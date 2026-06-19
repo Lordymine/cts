@@ -44,6 +44,7 @@ func Help() string {
 		{"cts clean", "pick items from a list and remove"},
 		{"cts purge", "show what it would remove (dead only, dry-run)"},
 		{"cts purge --yes", "actually remove the dead ones (with backup)"},
+		{"cts version", "print the version"},
 		{"cts help", "this help"},
 	}
 	for _, r := range rows {

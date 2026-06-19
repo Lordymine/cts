@@ -22,6 +22,9 @@ import (
 	"cts/internal/ui"
 )
 
+// version is set at build time via -ldflags "-X main.version=...".
+var version = "dev"
+
 func main() {
 	args := os.Args[1:]
 
@@ -37,6 +40,8 @@ func main() {
 		err = runPurge(context.Background(), len(args) > 1 && args[1] == "--yes")
 	case args[0] == "help", args[0] == "-h", args[0] == "--help":
 		fmt.Println(ui.Help())
+	case args[0] == "version", args[0] == "--version", args[0] == "-v":
+		fmt.Println("cts " + version)
 	default:
 		fmt.Println(ui.Help())
 		os.Exit(2)
