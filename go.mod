@@ -1,6 +1,6 @@
 module cts
 
-go 1.25.0
+go 1.24
 
 require (
 	github.com/charmbracelet/huh v1.0.0
